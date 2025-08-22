@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const sig = searchParams.get('sig') || ''
     if (!fileId || !exp || !sig) return NextResponse.json({ error: 'Invalid link' }, { status: 400 })
     if (Math.floor(Date.now() / 1000) > exp) return NextResponse.json({ error: 'Link expired' }, { status: 410 })
-    const secret = process.env.SIGNED_URL_SECRET || process.env.ENCRYPTION_KEY || process.env.NODE_ENV === 'development' ? 'dev-secret' : null
+    const secret = process.env.SIGNED_URL_SECRET || process.env.ENCRYPTION_KEY || (process.env.NODE_ENV === 'development' ? 'dev-secret' : 'fallback-secret')
     if (!verifySignature(fileId, exp, sig, secret)) return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
 
     // Redirect to Appwrite file view URL (no permanent leak because this route guards access)

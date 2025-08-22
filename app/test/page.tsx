@@ -10,10 +10,10 @@ export default function TestPage() {
 
   const testConnection = async () => {
     try {
-      // Test basic connection by pinging Appwrite
-      const result = await client.ping()
+      // Test basic connection by getting account info
+      const result = await account.get()
       setIsConnected(true)
-      setTestResult('✅ Appwrite connection successful! Ping response: ' + JSON.stringify(result))
+      setTestResult('✅ Appwrite connection successful! Account info: ' + JSON.stringify(result))
       toast.success('Appwrite connection successful!')
     } catch (error: any) {
       setIsConnected(false)

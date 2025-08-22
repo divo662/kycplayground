@@ -55,7 +55,7 @@ export class FileUploadService {
         ID.unique(),
         {
           ...fileRecord,
-          metadata: JSON.stringify({ sessionId, documentType }),
+          metadata: JSON.stringify({ documentType }),
           uploadedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()

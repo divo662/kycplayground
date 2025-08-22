@@ -87,7 +87,7 @@ export default function TestAuthPage() {
       const result = await AuthService.signIn('test@example.com', 'testpassword123')
       
       toast.success('Login test completed!')
-      setTestResults(prev => ({
+      setTestResults((prev: any) => ({
         ...prev,
         loginTest: {
           success: true,
@@ -97,7 +97,7 @@ export default function TestAuthPage() {
       
     } catch (error: any) {
       toast.error(`Login test failed: ${error.message}`)
-      setTestResults(prev => ({
+      setTestResults((prev: any) => ({
         ...prev,
         loginTest: {
           success: false,

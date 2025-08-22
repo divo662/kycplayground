@@ -46,7 +46,7 @@ export default function ApiKeysPage() {
       } else {
         throw new Error(data.error || 'Failed to load API keys')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading API keys:', error)
       setError(error.message || 'Failed to load API keys')
       setApiKeys([])
@@ -89,7 +89,7 @@ export default function ApiKeysPage() {
       } else {
         throw new Error(data.error || 'Failed to create API key')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating API key:', error)
       alert(`Failed to create API key: ${error.message}`)
     }
@@ -132,7 +132,7 @@ export default function ApiKeysPage() {
       } else {
         throw new Error(data.error || 'Failed to update API key')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating API key status:', error)
       alert(`Failed to update API key: ${error.message}`)
     }
@@ -155,7 +155,7 @@ export default function ApiKeysPage() {
         } else {
           throw new Error(data.error || 'Failed to delete API key')
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error deleting API key:', error)
         alert(`Failed to delete API key: ${error.message}`)
       }

@@ -13,6 +13,11 @@ export interface UserProfile {
   phone?: string
   country?: string
   plan: string
+  apiUsage?: {
+    totalRequests: number
+    monthlyRequests: number
+    lastResetDate: Date
+  }
   createdAt: Date
   updatedAt: Date
 }
@@ -27,6 +32,11 @@ export interface User {
   phone?: string
   country?: string
   plan?: string
+  apiUsage?: {
+    totalRequests: number
+    monthlyRequests: number
+    lastResetDate: Date
+  }
   createdAt: Date
   updatedAt: Date
 }

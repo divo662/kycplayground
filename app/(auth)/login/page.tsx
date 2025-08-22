@@ -124,19 +124,12 @@ function LoginContent() {
       
       let user: any
       
-      // Handle different session types
-      if (signInResult.session === 'existing') {
-        // User already had an active session
-        user = signInResult.user
-        toast.success('Welcome back!')
-      } else {
-        // New session created, get current user
-        user = await AuthService.getCurrentUser()
-        if (!user) {
-          throw new Error('Failed to get user information')
-        }
-        toast.success('Successfully logged in!')
+      // Get user from sign in result
+      user = signInResult.user
+      if (!user) {
+        throw new Error('Failed to get user information')
       }
+      toast.success('Successfully logged in!')
 
       // Get user profile from database
       const userProfile = await UserService.getUserProfile(user.$id) as UserProfile | null

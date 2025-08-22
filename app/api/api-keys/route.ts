@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         success: true,
         apiKeys: normalizedKeys
       })
-    } catch (dbError) {
+    } catch (dbError: any) {
       console.error('Database error:', dbError)
       return NextResponse.json(
         { error: 'Failed to fetch API keys from database' },
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
           updatedAt: response.$updatedAt
         }
       })
-    } catch (dbError) {
+    } catch (dbError: any) {
       console.error('Database error:', dbError)
       console.error('Error details:', {
         code: dbError.code,

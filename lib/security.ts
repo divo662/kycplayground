@@ -13,7 +13,8 @@ export function clearRateLimitStore() {
 // Clean up expired entries every 5 minutes
 setInterval(() => {
   const now = Date.now()
-  for (const [key, value] of rateLimitStore.entries()) {
+  const entries = Array.from(rateLimitStore.entries())
+  for (const [key, value] of entries) {
     if (now > value.resetTime) {
       rateLimitStore.delete(key)
     }
@@ -26,6 +27,7 @@ export interface RequestLog {
   url: string
   ip: string
   userAgent: string
+  apiKey?: string
   responseTime: number
   statusCode: number
   error?: string

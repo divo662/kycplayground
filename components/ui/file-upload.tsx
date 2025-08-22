@@ -105,7 +105,7 @@ export function FileUpload({
   }
 
   // Upload file to Appwrite if real upload is enabled
-  const uploadFileToAppwrite = async (file: File) => {
+  const uploadFileToAppwrite = async (file: FileWithPreview) => {
     if (!enableRealUpload || !userId) return
 
     try {

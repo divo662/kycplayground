@@ -71,7 +71,7 @@ export async function PUT(
         apiKey: parsedApiKey
       })
       
-    } catch (dbError) {
+    } catch (dbError: any) {
       if (dbError.code === 404) {
         return NextResponse.json(
           { error: 'API key not found' },
@@ -133,7 +133,7 @@ export async function DELETE(
         id: params.id
       })
       
-    } catch (dbError) {
+    } catch (dbError: any) {
       if (dbError.code === 404) {
         return NextResponse.json(
           { error: 'API key not found' },

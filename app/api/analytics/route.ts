@@ -14,11 +14,12 @@ export async function GET() {
     const result = await databases.listDocuments(
       config.appwrite.database.id,
       config.appwrite.database.collections.verificationSessions,
-      [Query.greaterThanEqual('createdAt', startISO)],
-      1000,
-      0,
-      'createdAt',
-      'asc'
+      [
+        Query.greaterThanEqual('createdAt', startISO),
+        Query.limit(1000),
+        Query.offset(0),
+        Query.orderAsc('createdAt')
+      ]
     )
 
     const docs = result.documents as any[]

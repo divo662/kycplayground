@@ -185,11 +185,8 @@ export async function POST(request: NextRequest) {
 }
 
 function generateWebhookSignature(payload: any, secret?: string): string {
-  const webhookSecret = secret || process.env.WEBHOOK_SECRET || (process.env.NODE_ENV === 'development' ? 'default-secret-key' : null)
+  const webhookSecret = secret || process.env.WEBHOOK_SECRET || (process.env.NODE_ENV === 'development' ? 'default-secret-key' : 'fallback-secret')
     
-  if (!webhookSecret) {
-    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
-  }
   const payloadString = JSON.stringify(payload)
   return Buffer.from(payloadString + webhookSecret).toString('base64').slice(0, 32)
 } 

@@ -2,8 +2,8 @@
 export const config = {
   appwrite: {
     endpoint: process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1',
-    projectId: process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID,
-    apiKey: process.env.APPWRITE_API_KEY, // Server-side only
+    projectId: process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'default-project',
+    apiKey: process.env.APPWRITE_API_KEY || 'default-api-key', // Server-side only
     database: {
       id: process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'kycplayground',
       collections: {
@@ -13,10 +13,17 @@ export const config = {
         verificationSessions: 'verification_sessions',  // Add this collection
         apiKeys: process.env.NEXT_PUBLIC_APPWRITE_API_KEYS_COLLECTION_ID || 'collection-api_keys',
         webhooks: 'webhooks',
+        webhookConfigs: 'webhook_configs',
       },
       bucket: process.env.NEXT_PUBLIC_APPWRITE_BUCKET_ID || 'documents',
       functions: {
         verify: process.env.NEXT_PUBLIC_APPWRITE_VERIFY_FUNCTION_ID || 'verify_document',
+      },
+    },
+    storage: {
+      buckets: {
+        documents: process.env.NEXT_PUBLIC_APPWRITE_BUCKET_ID || 'documents',
+        avatars: 'avatars',
       },
     },
   },

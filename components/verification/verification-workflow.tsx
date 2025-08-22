@@ -91,10 +91,10 @@ export function VerificationWorkflow({ onComplete, className = '' }: Verificatio
     try {
       // Upload document
       const file = selectedFiles[0]
-      const document = await DocumentService.uploadDocument(file, documentType, user.$id)
+      const uploadResult = await DocumentService.uploadDocument(file, documentType, user.$id)
       
       // Create verification record
-      const verification = await VerificationService.createVerification(document.$id, user.$id, {
+      const verification = await VerificationService.createVerification(uploadResult.document.$id, user.$id, {
         documentType,
         enableFaceDetection: true,
         enableDocumentValidation: true,

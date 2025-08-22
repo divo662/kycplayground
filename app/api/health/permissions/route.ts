@@ -77,13 +77,12 @@ export async function GET() {
     try {
       // Test write permission by attempting to create a temporary file
       const testBucket = config.appwrite.storage.buckets.documents;
-      const testFile = Buffer.from('test content');
+      const testFile = new File(['test content'], 'test.txt', { type: 'text/plain' });
       
       await storage.createFile(
         testBucket,
         'unique()',
-        testFile,
-        ['test.txt']
+        testFile
       );
       permissions.storage.write = true;
       permissions.storage.create = true;
