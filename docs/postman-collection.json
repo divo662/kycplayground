@@ -1,0 +1,422 @@
+{
+  "info": {
+    "name": "KYCPlayground API",
+    "description": "Complete API collection for testing KYCPlayground identity verification endpoints. Import this collection to test all API functionality.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "Base URL for the API (change for staging/production)"
+    },
+    {
+      "key": "apiKey",
+      "value": "your_api_key_here",
+      "type": "string",
+      "description": "Your KYCPlayground API key"
+    },
+    {
+      "key": "webhookUrl",
+      "value": "https://your-app.com/webhooks/kyc",
+      "type": "string",
+      "description": "Your webhook endpoint URL"
+    },
+    {
+      "key": "returnUrl",
+      "value": "https://your-app.com/kyc/callback",
+      "type": "string",
+      "description": "URL to redirect users after verification"
+    }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "X-API-Key",
+        "value": "{{apiKey}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Verifications",
+      "item": [
+        {
+          "name": "Create Verification Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"webhookUrl\": \"{{webhookUrl}}\",\n  \"returnUrl\": \"{{returnUrl}}\",\n  \"options\": {\n    \"enableFaceDetection\": true,\n    \"enableDocumentValidation\": true,\n    \"requireSelfie\": false,\n    \"documentTypes\": [\"passport\", \"drivers_license\"],\n    \"countryCode\": \"US\"\n  },\n  \"metadata\": {\n    \"userId\": \"user_123\",\n    \"orderId\": \"order_456\",\n    \"customerType\": \"premium\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/verifications/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "verifications", "create"]
+            },
+            "description": "Creates a new verification session and returns a redirect URL for users to complete verification."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Verification Session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/verifications/session_123",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "verifications", "session_123"]
+            },
+            "description": "Retrieves details of a specific verification session. Replace 'session_123' with actual session ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Verification Session",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"results\": {\n    \"status\": \"verified\",\n    \"score\": 95.5,\n    \"documentType\": \"passport\",\n    \"country\": \"United States\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"dateOfBirth\": \"1990-01-01\",\n    \"faceMatchScore\": 98.2,\n    \"verificationTime\": 45.2,\n    \"completedAt\": \"2025-01-21T12:08:15.123Z\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/verifications/session_123/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "verifications", "session_123", "update"]
+            },
+            "description": "Updates a verification session with results. Replace 'session_123' with actual session ID."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for managing verification sessions"
+    },
+    {
+      "name": "API Keys",
+      "item": [
+        {
+          "name": "List API Keys",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api-keys"]
+            },
+            "description": "Retrieves a list of all API keys for the authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Create API Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test API Key\",\n  \"permissions\": [\"verifications:create\", \"webhooks:manage\"],\n  \"expiresAt\": \"2026-01-21T12:00:00.000Z\",\n  \"metadata\": {\n    \"environment\": \"testing\",\n    \"notes\": \"For integration testing\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api-keys"]
+            },
+            "description": "Creates a new API key with specified permissions."
+          },
+          "response": []
+        },
+        {
+          "name": "Get API Key Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys/key_123",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api-keys", "key_123"]
+            },
+            "description": "Retrieves details of a specific API key. Replace 'key_123' with actual key ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update API Key",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated API Key Name\",\n  \"permissions\": [\"verifications:create\", \"verifications:read\", \"webhooks:manage\"],\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys/key_123",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api-keys", "key_123"]
+            },
+            "description": "Updates an existing API key's permissions or metadata. Replace 'key_123' with actual key ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Rotate API Key",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys/key_123/rotate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api-keys", "key_123", "rotate"]
+            },
+            "description": "Creates a new API key with the same permissions and deactivates the old one. Replace 'key_123' with actual key ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke API Key",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys/key_123/revoke",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api-keys", "key_123", "revoke"]
+            },
+            "description": "Deactivates an API key. Replace 'key_123' with actual key ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete API Key",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys/key_123",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api-keys", "key_123"]
+            },
+            "description": "Permanently deletes an API key. Replace 'key_123' with actual key ID."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for managing API keys"
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "List Webhook Configurations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks"]
+            },
+            "description": "Retrieves a list of all webhook configurations."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Webhook Configuration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"KYC Verification Webhook\",\n  \"url\": \"{{webhookUrl}}\",\n  \"events\": [\"verification.created\", \"verification.completed\", \"verification.failed\"],\n  \"isActive\": true,\n  \"secret\": \"your-webhook-secret\",\n  \"retryCount\": 3,\n  \"metadata\": {\n    \"environment\": \"production\",\n    \"notes\": \"Main webhook for KYC verifications\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks"]
+            },
+            "description": "Creates a new webhook configuration for receiving verification events."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Webhook Configuration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/webhook_123",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "webhook_123"]
+            },
+            "description": "Retrieves details of a specific webhook configuration. Replace 'webhook_123' with actual webhook ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Webhook Configuration",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated KYC Webhook\",\n  \"url\": \"{{webhookUrl}}\",\n  \"events\": [\"verification.created\", \"verification.completed\", \"verification.failed\", \"verification.expired\"],\n  \"isActive\": true,\n  \"retryCount\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/webhook_123",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "webhook_123"]
+            },
+            "description": "Updates an existing webhook configuration. Replace 'webhook_123' with actual webhook ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Webhook Configuration",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/webhook_123",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "webhook_123"]
+            },
+            "description": "Permanently deletes a webhook configuration. Replace 'webhook_123' with actual webhook ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Test Webhook Delivery",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"webhookId\": \"webhook_123\",\n  \"eventType\": \"verification.created\",\n  \"customPayload\": {\n    \"test\": true,\n    \"timestamp\": \"2025-01-21T12:00:00.000Z\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "test"]
+            },
+            "description": "Sends a test webhook to verify your endpoint is working correctly. Replace 'webhook_123' with actual webhook ID."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for managing webhook configurations"
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Get Verification Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics?days=14",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "14",
+                  "description": "Number of days to include (default: 14, max: 30)"
+                }
+              ]
+            },
+            "description": "Retrieves analytics data for verifications over the specified period."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for retrieving analytics data"
+    },
+    {
+      "name": "Files",
+      "item": [
+        {
+          "name": "Generate Signed File URL",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fileId\": \"file_123\",\n  \"ttlSeconds\": 3600\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/files/sign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "sign"]
+            },
+            "description": "Generates a time-limited signed URL for viewing a file."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for file management"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set environment variables based on collection variables",
+          "pm.environment.set('baseUrl', pm.collectionVariables.get('baseUrl'));",
+          "pm.environment.set('apiKey', pm.collectionVariables.get('apiKey'));",
+          "pm.environment.set('webhookUrl', pm.collectionVariables.get('webhookUrl'));",
+          "pm.environment.set('returnUrl', pm.collectionVariables.get('returnUrl'));"
+        ]
+      }
+    }
+  ]
+}

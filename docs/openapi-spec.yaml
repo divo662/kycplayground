@@ -1,0 +1,1517 @@
+openapi: 3.0.3
+info:
+  title: KYCPlayground API
+  description: |
+    KYCPlayground provides identity verification and compliance solutions through a simple REST API.
+    
+    ## Quick Start
+    1. Create an API key in your dashboard
+    2. Use the key in the `X-API-Key` header for all requests
+    3. Create verification sessions and redirect users to complete verification
+    4. Receive webhooks for real-time status updates
+    
+    ## Authentication
+    All API requests require an API key in the `X-API-Key` header.
+    
+    ## Rate Limiting
+    - Free tier: 100 requests/hour per API key
+    - Pro tier: 1000 requests/hour per API key
+    - Enterprise: Custom limits
+    
+    ## Webhooks
+    Configure webhooks to receive real-time verification updates. All webhook payloads include HMAC signatures for security.
+    
+    ## Support
+    - Documentation: https://docs.kycplayground.com
+    - Support: support@kycplayground.com
+    - Discord: https://discord.gg/kycplayground
+    
+  version: 1.0.0
+  contact:
+    name: KYCPlayground Support
+    email: support@kycplayground.com
+    url: https://kycplayground.com/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.kycplayground.com
+    description: Production server
+  - url: https://staging-api.kycplayground.com
+    description: Staging server
+  - url: http://localhost:3000
+    description: Local development server
+
+tags:
+  - Authentication
+  - Verifications
+  - API Keys
+  - Webhooks
+  - Analytics
+  - Files
+
+paths:
+  /api/verifications/create:
+    post:
+      tags:
+        - Verifications
+      summary: Create a new verification session
+      description: |
+        Creates a new verification session and returns a URL where users can complete their verification.
+        The session will expire after 24 hours if not completed.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVerificationRequest'
+            examples:
+              basic:
+                summary: Basic verification
+                value:
+                  webhookUrl: "https://your-app.com/webhooks/kyc"
+                  returnUrl: "https://your-app.com/kyc/callback"
+                  options:
+                    enableFaceDetection: true
+                    enableDocumentValidation: true
+                  metadata:
+                    userId: "user_123"
+                    orderId: "order_456"
+              advanced:
+                summary: Advanced verification with custom options
+                value:
+                  webhookUrl: "https://your-app.com/webhooks/kyc"
+                  returnUrl: "https://your-app.com/kyc/callback"
+                  options:
+                    enableFaceDetection: true
+                    enableDocumentValidation: true
+                    requireSelfie: true
+                    documentTypes: ["passport", "drivers_license"]
+                    countryCode: "US"
+                  metadata:
+                    userId: "user_123"
+                    orderId: "order_456"
+                    customerType: "premium"
+      responses:
+        '200':
+          description: Verification session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateVerificationResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    sessionId: "session_1755776068982_fobdhsi5p"
+                    redirectUrl: "https://kycplayground.com/verify/session_1755776068982_fobdhsi5p"
+                    hostedUrl: null
+                    expiresAt: "2025-01-22T12:07:26.898Z"
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/verifications/{sessionId}:
+    get:
+      tags:
+        - Verifications
+      summary: Get verification session details
+      description: Retrieves the current status and details of a verification session
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The verification session ID
+          schema:
+            type: string
+            example: "session_1755776068982_fobdhsi5p"
+      responses:
+        '200':
+          description: Session details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSession'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/verifications/{sessionId}/update:
+    put:
+      tags:
+        - Verifications
+      summary: Update verification session
+      description: |
+        Updates a verification session with results. This endpoint is typically called by the verification UI
+        after a user completes their verification.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The verification session ID
+          schema:
+            type: string
+            example: "session_1755776068982_fobdhsi5p"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVerificationRequest'
+      responses:
+        '200':
+          description: Session updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateVerificationResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/api-keys:
+    get:
+      tags:
+        - API Keys
+      summary: List API keys
+      description: Retrieves a list of all API keys for the authenticated user
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: API keys retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiKey'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - API Keys
+      summary: Create new API key
+      description: Creates a new API key with specified permissions
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApiKeyRequest'
+      responses:
+        '201':
+          description: API key created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateApiKeyResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/api-keys/{id}:
+    get:
+      tags:
+        - API Keys
+      summary: Get API key details
+      description: Retrieves details of a specific API key
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The API key ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: API key details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKey'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - API Keys
+      summary: Update API key
+      description: Updates an existing API key's permissions or metadata
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The API key ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApiKeyRequest'
+      responses:
+        '200':
+          description: API key updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKey'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - API Keys
+      summary: Delete API key
+      description: Permanently deletes an API key
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The API key ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: API key deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteApiKeyResponse'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/api-keys/{id}/rotate:
+    post:
+      tags:
+        - API Keys
+      summary: Rotate API key
+      description: |
+        Creates a new API key with the same permissions and deactivates the old one.
+        The old key will be marked as revoked but not deleted for audit purposes.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The API key ID to rotate
+          schema:
+            type: string
+      responses:
+        '200':
+          description: API key rotated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RotateApiKeyResponse'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/api-keys/{id}/revoke:
+    post:
+      tags:
+        - API Keys
+      summary: Revoke API key
+      description: |
+        Deactivates an API key. The key will no longer work for authentication
+        but will be retained for audit purposes.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The API key ID to revoke
+          schema:
+            type: string
+      responses:
+        '200':
+          description: API key revoked successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevokeApiKeyResponse'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/webhooks:
+    get:
+      tags:
+        - Webhooks
+      summary: List webhook configurations
+      description: Retrieves a list of all webhook configurations for the authenticated user
+      responses:
+        '200':
+          description: Webhook configurations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WebhookConfig'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Webhooks
+      summary: Create webhook configuration
+      description: Creates a new webhook configuration
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookRequest'
+      responses:
+        '201':
+          description: Webhook configuration created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookConfig'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/webhooks/{id}:
+    get:
+      tags:
+        - Webhooks
+      summary: Get webhook configuration
+      description: Retrieves details of a specific webhook configuration
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The webhook configuration ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Webhook configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookConfig'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Webhook configuration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Webhooks
+      summary: Update webhook configuration
+      description: Updates an existing webhook configuration
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The webhook configuration ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWebhookRequest'
+      responses:
+        '200':
+          description: Webhook configuration updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookConfig'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Webhook configuration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Webhooks
+      summary: Delete webhook configuration
+      description: Permanently deletes a webhook configuration
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The webhook configuration ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Webhook configuration deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteWebhookResponse'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Webhook configuration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/webhooks/test:
+    post:
+      tags:
+        - Webhooks
+      summary: Test webhook delivery
+      description: |
+        Sends a test webhook to verify your endpoint is working correctly.
+        The test payload includes sample verification data.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestWebhookRequest'
+      responses:
+        '200':
+          description: Test webhook sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestWebhookResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/analytics:
+    get:
+      tags:
+        - Analytics
+      summary: Get verification analytics
+      description: |
+        Retrieves analytics data for verifications over the last 14 days.
+        Includes daily totals, completion rates, and failure counts.
+      parameters:
+        - name: days
+          in: query
+          description: Number of days to include (default: 14, max: 30)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 30
+            default: 14
+        - name: startDate
+          in: query
+          description: Start date in ISO format (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: End date in ISO format (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Analytics data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsResponse'
+        '400':
+          description: Invalid date parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/files/sign:
+    post:
+      tags:
+        - Files
+      summary: Generate signed file URL
+      description: |
+        Generates a time-limited signed URL for viewing a file.
+        The signed URL can be used to access files without authentication.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignFileRequest'
+      responses:
+        '200':
+          description: Signed URL generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignFileResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/files/view/{signature}:
+    get:
+      tags:
+        - Files
+      summary: View file with signed URL
+      description: |
+        Redirects to the actual file using a signed URL.
+        This endpoint validates the signature and expiry before redirecting.
+      parameters:
+        - name: signature
+          in: path
+          required: true
+          description: The signed URL signature
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirects to the actual file
+          headers:
+            Location:
+              description: The actual file URL
+              schema:
+                type: string
+        '400':
+          description: Invalid signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '410':
+          description: Signed URL expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        Your API key for authentication. You can find your API keys in the dashboard.
+        Example: `X-API-Key: kyc_abc123...`
+
+  schemas:
+    CreateVerificationRequest:
+      type: object
+      required:
+        - webhookUrl
+        - returnUrl
+      properties:
+        webhookUrl:
+          type: string
+          format: uri
+          description: URL where webhook notifications will be sent
+          example: "https://your-app.com/webhooks/kyc"
+        returnUrl:
+          type: string
+          format: uri
+          description: URL where users will be redirected after verification
+          example: "https://your-app.com/kyc/callback"
+        options:
+          $ref: '#/components/schemas/VerificationOptions'
+        metadata:
+          $ref: '#/components/schemas/VerificationMetadata'
+
+    VerificationOptions:
+      type: object
+      properties:
+        enableFaceDetection:
+          type: boolean
+          description: Enable face detection and matching
+          default: true
+        enableDocumentValidation:
+          type: boolean
+          description: Enable document validation and OCR
+          default: true
+        requireSelfie:
+          type: boolean
+          description: Require a selfie photo
+          default: false
+        documentTypes:
+          type: array
+          items:
+            type: string
+            enum: [passport, drivers_license, national_id, residence_permit]
+          description: Allowed document types
+        countryCode:
+          type: string
+          description: ISO 3166-1 alpha-2 country code
+          pattern: '^[A-Z]{2}$'
+          example: "US"
+        language:
+          type: string
+          description: ISO 639-1 language code
+          pattern: '^[a-z]{2}$'
+          example: "en"
+
+    VerificationMetadata:
+      type: object
+      additionalProperties: true
+      properties:
+        userId:
+          type: string
+          description: Your internal user identifier
+          example: "user_123"
+        orderId:
+          type: string
+          description: Order or transaction identifier
+          example: "order_456"
+        customerType:
+          type: string
+          description: Customer tier or type
+          example: "premium"
+        tags:
+          type: array
+          items:
+            type: string
+          description: Custom tags for categorization
+
+    CreateVerificationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        sessionId:
+          type: string
+          description: Unique verification session identifier
+          example: "session_1755776068982_fobdhsi5p"
+        redirectUrl:
+          type: string
+          format: uri
+          description: URL where users should be redirected to complete verification
+          example: "https://kycplayground.com/verify/session_1755776068982_fobdhsi5p"
+        hostedUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Hosted verification URL (if applicable)
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the session expires
+          example: "2025-01-22T12:07:26.898Z"
+
+    VerificationSession:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "session_1755776068982_fobdhsi5p"
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed, expired]
+          example: "pending"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-21T12:07:26.898Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-01-21T12:07:26.898Z"
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2025-01-22T12:07:26.898Z"
+        webhookUrl:
+          type: string
+          format: uri
+          example: "https://your-app.com/webhooks/kyc"
+        returnUrl:
+          type: string
+          format: uri
+          example: "https://your-app.com/kyc/callback"
+        options:
+          $ref: '#/components/schemas/VerificationOptions'
+        metadata:
+          $ref: '#/components/schemas/VerificationMetadata'
+        results:
+          $ref: '#/components/schemas/VerificationResults'
+        apiKeyId:
+          type: string
+          example: "kyc_abc123..."
+        userId:
+          type: string
+          example: "user_123"
+
+    VerificationResults:
+      type: object
+      nullable: true
+      properties:
+        status:
+          type: string
+          enum: [verified, rejected, pending_review]
+          example: "verified"
+        score:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Verification confidence score
+          example: 95.5
+        documentNumber:
+          type: string
+          description: Extracted document number (encrypted)
+          example: "A12345678"
+        documentType:
+          type: string
+          enum: [passport, drivers_license, national_id, residence_permit]
+          example: "passport"
+        country:
+          type: string
+          example: "United States"
+        firstName:
+          type: string
+          example: "John"
+        lastName:
+          type: string
+          example: "Doe"
+        dateOfBirth:
+          type: string
+          format: date
+          example: "1990-01-01"
+        expiryDate:
+          type: string
+          format: date
+          example: "2030-01-01"
+        faceMatchScore:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Face matching confidence score
+          example: 98.2
+        uploadedFiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UploadedFile'
+        verificationTime:
+          type: number
+          description: Time taken to complete verification in seconds
+          example: 45.2
+        completedAt:
+          type: string
+          format: date-time
+          example: "2025-01-21T12:08:15.123Z"
+
+    UploadedFile:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "file_123"
+        name:
+          type: string
+          example: "passport.jpg"
+        type:
+          type: string
+          example: "image/jpeg"
+        size:
+          type: integer
+          description: File size in bytes
+          example: 2048576
+        fileUrl:
+          type: string
+          format: uri
+          example: "https://storage.appwrite.io/v1/buckets/documents/files/file_123/view"
+        uploadedAt:
+          type: string
+          format: date-time
+          example: "2025-01-21T12:07:30.456Z"
+
+    UpdateVerificationRequest:
+      type: object
+      required:
+        - results
+      properties:
+        results:
+          $ref: '#/components/schemas/VerificationResults'
+
+    UpdateVerificationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Verification session updated successfully"
+
+    CreateApiKeyRequest:
+      type: object
+      required:
+        - name
+        - permissions
+      properties:
+        name:
+          type: string
+          description: Human-readable name for the API key
+          example: "Production API Key"
+        permissions:
+          type: array
+          items:
+            type: string
+            enum: [verifications:create, verifications:read, verifications:update, webhooks:manage, api_keys:manage, analytics:read]
+          description: Permissions granted to this API key
+          example: ["verifications:create", "webhooks:manage"]
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the API key expires (optional)
+          example: "2026-01-21T12:00:00.000Z"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Custom metadata for the API key
+
+    CreateApiKeyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        apiKey:
+          $ref: '#/components/schemas/ApiKey'
+        secretKey:
+          type: string
+          description: The secret key (only shown once)
+          example: "kyc_abc123def456ghi789jkl012mno345pqr678stu901vwx234yz567890"
+
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "kyc_abc123..."
+        name:
+          type: string
+          example: "Production API Key"
+        prefix:
+          type: string
+          description: First 8 characters of the secret key
+          example: "kyc_abc1"
+        permissions:
+          type: array
+          items:
+            type: string
+          example: ["verifications:create", "webhooks:manage"]
+        isActive:
+          type: boolean
+          description: Whether the key is active
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-21T12:00:00.000Z"
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-01-21T14:30:00.000Z"
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-01-21T12:00:00.000Z"
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateApiKeyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: New name for the API key
+        permissions:
+          type: array
+          items:
+            type: string
+            enum: [verifications:create, verifications:read, verifications:update, webhooks:manage, api_keys:manage, analytics:read]
+        isActive:
+          type: boolean
+        expiresAt:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    DeleteApiKeyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "API key deleted successfully"
+
+    RotateApiKeyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "API key rotated successfully"
+        newApiKey:
+          $ref: '#/components/schemas/ApiKey'
+        newSecretKey:
+          type: string
+          description: The new secret key (only shown once)
+          example: "kyc_new123def456ghi789jkl012mno345pqr678stu901vwx234yz567890"
+
+    RevokeApiKeyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "API key revoked successfully"
+
+    CreateWebhookRequest:
+      type: object
+      required:
+        - name
+        - url
+        - events
+      properties:
+        name:
+          type: string
+          description: Human-readable name for the webhook
+          example: "KYC Verification Webhook"
+        url:
+          type: string
+          format: uri
+          description: URL where webhooks will be sent
+          example: "https://your-app.com/webhooks/kyc"
+        events:
+          type: array
+          items:
+            type: string
+            enum: [verification.created, verification.started, verification.completed, verification.failed, verification.expired]
+          description: Events to receive webhooks for
+          example: ["verification.created", "verification.completed"]
+        isActive:
+          type: boolean
+          description: Whether the webhook is active
+          default: true
+        secret:
+          type: string
+          description: Secret for HMAC signature verification (optional)
+          example: "your-webhook-secret"
+        retryCount:
+          type: integer
+          minimum: 0
+          maximum: 5
+          description: Number of retry attempts for failed deliveries
+          default: 3
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Custom metadata for the webhook
+
+    WebhookConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "webhook_123"
+        name:
+          type: string
+          example: "KYC Verification Webhook"
+        url:
+          type: string
+          format: uri
+          example: "https://your-app.com/webhooks/kyc"
+        events:
+          type: array
+          items:
+            type: string
+          example: ["verification.created", "verification.completed"]
+        isActive:
+          type: boolean
+          example: true
+        secret:
+          type: string
+          nullable: true
+          example: "your-webhook-secret"
+        retryCount:
+          type: integer
+          example: 3
+        lastDeliveryAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-01-21T14:30:00.000Z"
+        lastDeliveryStatus:
+          type: string
+          enum: [success, failed, pending]
+          nullable: true
+          example: "success"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-21T12:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-01-21T12:00:00.000Z"
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateWebhookRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum: [verification.created, verification.started, verification.completed, verification.failed, verification.expired]
+        isActive:
+          type: boolean
+        secret:
+          type: string
+        retryCount:
+          type: integer
+          minimum: 0
+          maximum: 5
+        metadata:
+          type: object
+          additionalProperties: true
+
+    DeleteWebhookResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Webhook configuration deleted successfully"
+
+    TestWebhookRequest:
+      type: object
+      required:
+        - webhookId
+      properties:
+        webhookId:
+          type: string
+          description: ID of the webhook to test
+          example: "webhook_123"
+        eventType:
+          type: string
+          enum: [verification.created, verification.started, verification.completed, verification.failed, verification.expired]
+          description: Event type to simulate (defaults to verification.created)
+          default: "verification.created"
+        customPayload:
+          type: object
+          additionalProperties: true
+          description: Custom payload to send (optional)
+
+    TestWebhookResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Test webhook sent successfully"
+        deliveryStatus:
+          type: string
+          enum: [success, failed, pending]
+          example: "success"
+        responseCode:
+          type: integer
+          description: HTTP response code from the webhook endpoint
+          example: 200
+        responseTime:
+          type: number
+          description: Response time in milliseconds
+          example: 150.5
+
+    AnalyticsResponse:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            startDate:
+              type: string
+              format: date
+              example: "2025-01-07"
+            endDate:
+              type: string
+              format: date
+              example: "2025-01-21"
+        dailyData:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+                example: "2025-01-21"
+              total:
+                type: integer
+                description: Total verifications started
+                example: 45
+              completed:
+                type: integer
+                description: Successfully completed verifications
+                example: 38
+              failed:
+                type: integer
+                description: Failed verifications
+                example: 7
+              completionRate:
+                type: number
+                minimum: 0
+                maximum: 100
+                description: Completion rate percentage
+                example: 84.4
+        summary:
+          type: object
+          properties:
+            totalVerifications:
+              type: integer
+              example: 630
+            totalCompleted:
+              type: integer
+              example: 532
+            totalFailed:
+              type: integer
+              example: 98
+            overallCompletionRate:
+              type: number
+              minimum: 0
+              maximum: 100
+              example: 84.4
+            averageCompletionTime:
+              type: number
+              description: Average time to complete verification in seconds
+              example: 42.3
+
+    SignFileRequest:
+      type: object
+      required:
+        - fileId
+      properties:
+        fileId:
+          type: string
+          description: ID of the file to sign
+          example: "file_123"
+        ttlSeconds:
+          type: integer
+          minimum: 60
+          maximum: 86400
+          description: Time to live in seconds (default: 3600 = 1 hour)
+          default: 3600
+
+    SignFileResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        signedUrl:
+          type: string
+          format: uri
+          description: Time-limited signed URL for viewing the file
+          example: "https://kycplayground.com/api/files/view/abc123def456"
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the signed URL expires
+          example: "2025-01-21T13:00:00.000Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Error message
+          example: "Invalid API key"
+        code:
+          type: string
+          description: Error code for programmatic handling
+          example: "INVALID_API_KEY"
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details
+        timestamp:
+          type: string
+          format: date-time
+          description: When the error occurred
+          example: "2025-01-21T12:00:00.000Z"
+
+  examples:
+    WebhookPayload:
+      verification.created:
+        summary: Verification session created
+        value:
+          event: "verification.created"
+          timestamp: "2025-01-21T12:07:26.898Z"
+          data:
+            verificationId: "verification_123"
+            sessionId: "session_1755776068982_fobdhsi5p"
+            status: "pending"
+            webhookUrl: "https://your-app.com/webhooks/kyc"
+            returnUrl: "https://your-app.com/kyc/callback"
+            metadata:
+              userId: "user_123"
+              orderId: "order_456"
+      verification.completed:
+        summary: Verification completed successfully
+        value:
+          event: "verification.completed"
+          timestamp: "2025-01-21T12:08:15.123Z"
+          data:
+            verificationId: "verification_123"
+            sessionId: "session_1755776068982_fobdhsi5p"
+            status: "completed"
+            results:
+              status: "verified"
+              score: 95.5
+              documentType: "passport"
+              country: "United States"
+              firstName: "John"
+              lastName: "Doe"
+              dateOfBirth: "1990-01-01"
+              faceMatchScore: 98.2
+              verificationTime: 45.2
+              completedAt: "2025-01-21T12:08:15.123Z"
+            metadata:
+              userId: "user_123"
+              orderId: "order_456"
+      verification.failed:
+        summary: Verification failed
+        value:
+          event: "verification.failed"
+          timestamp: "2025-01-21T12:08:15.123Z"
+          data:
+            verificationId: "verification_123"
+            sessionId: "session_1755776068982_fobdhsi5p"
+            status: "failed"
+            error:
+              code: "DOCUMENT_VALIDATION_FAILED"
+              message: "Document could not be validated"
+              details:
+                reason: "Poor image quality"
+                suggestion: "Please upload a clearer image"
+            metadata:
+              userId: "user_123"
+              orderId: "order_456"
+
+externalDocs:
+  description: KYCPlayground Developer Documentation
+  url: https://docs.kycplayground.com
