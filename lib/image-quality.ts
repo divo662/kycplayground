@@ -6,7 +6,13 @@
  *  - crop/border detection via edge density near borders
  */
 
-import sharp from 'sharp'
+// Optional sharp import - only use when available
+let sharp: any = null
+try {
+  sharp = require('sharp')
+} catch (e) {
+  // Sharp not available, will use fallback methods
+}
 
 export interface ImageQualityResult {
   blurScore?: number
@@ -23,26 +29,36 @@ export async function analyzeImageQualityBuffer(buffer: Buffer): Promise<ImageQu
     cropLikely: false
   }
 
-  const img = sharp(buffer).greyscale()
-  const { width, height } = await img.metadata()
-  if (!width || !height) return result
+  // Check if sharp is available
+  if (!sharp) {
+    console.warn('Sharp not available, returning basic image quality analysis')
+    return result
+  }
 
-  // Get raw pixels
-  const raw = await img.raw().toBuffer({ resolveWithObject: true })
-  const pixels = raw.data
+  try {
+    const img = sharp(buffer).greyscale()
+    const { width, height } = await img.metadata()
+    if (!width || !height) return result
 
-  // Laplacian variance approximation
-  const lapVar = laplacianVariance(pixels, width, height)
-  result.blurScore = lapVar
-  result.blurLikely = (lapVar !== undefined && lapVar < 50) // heuristic threshold
+    // Get raw pixels
+    const raw = await img.raw().toBuffer({ resolveWithObject: true })
+    const pixels = raw.data
 
-  // Brightness and contrast (normalized 0..1)
-  const { brightness, contrast } = estimateBrightnessContrast(pixels)
-  result.brightness = brightness
-  result.contrast = contrast
+    // Laplacian variance approximation
+    const lapVar = laplacianVariance(pixels, width, height)
+    result.blurScore = lapVar
+    result.blurLikely = (lapVar !== undefined && lapVar < 50) // heuristic threshold
 
-  // Border edge density
-  result.cropLikely = detectBorderCrop(pixels, width, height)
+    // Brightness and contrast (normalized 0..1)
+    const { brightness, contrast } = estimateBrightnessContrast(pixels)
+    result.brightness = brightness
+    result.contrast = contrast
+
+    // Border edge density
+    result.cropLikely = detectBorderCrop(pixels, width, height)
+  } catch (error) {
+    console.warn('Image quality analysis failed:', error)
+  }
 
   return result
 }
