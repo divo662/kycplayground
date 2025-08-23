@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { databases } from '@/lib/appwrite'
+import { databases } from '@/lib/appwrite-server'
 import { config } from '@/lib/config'
 import { rateLimitMiddleware } from '@/lib/security'
 import { ID, Query } from 'appwrite'

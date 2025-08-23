@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { databases } from '@/lib/appwrite'
+import { databases } from '@/lib/appwrite-server'
 import { config } from '@/lib/config'
 
 const DATABASE_ID = config.appwrite.database.id

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { databases } from '@/lib/appwrite'
+import { databases } from '@/lib/appwrite-server'
 import { config } from '@/lib/config'
 import { Query } from 'appwrite'
 

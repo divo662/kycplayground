@@ -3,7 +3,7 @@ import type { Models } from 'appwrite'
 import { config } from './config'
 import { UserProfile } from '@/types'
 
-// Initialize Appwrite client
+// Initialize Appwrite client for client-side operations
 const client = new Client()
 
 client

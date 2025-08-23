@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { databases } from '@/lib/appwrite'
-import { ID, Query } from 'appwrite'
+import { databases } from '@/lib/appwrite-server'
+import { ID, Query } from 'node-appwrite'
 
 // Handle CORS preflight requests
 export async function OPTIONS(request: NextRequest) {
