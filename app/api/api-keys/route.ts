@@ -4,7 +4,7 @@ import { databases } from '@/lib/appwrite-server'
 import { config } from '@/lib/config'
 
 const DATABASE_ID = config.appwrite.database.id
-const COLLECTION_ID = (config.appwrite.database.collections as any).apiKeys || 'collection-api_keys'
+const COLLECTION_ID = config.appwrite.database.collections.apiKeys
 
 // Generate a new API key
 function generateApiKey(): string {
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
       // Normalize and parse permissions; expose stable id and prefix
       const normalizedKeys = userKeys.map((doc: any) => {
-        const perms = typeof doc.permissions === 'string' ? JSON.parse(doc.permissions) : doc.permissions
+        const perms = Array.isArray(doc.permissions) ? doc.permissions : []
         const keyValue: string = doc.key || ''
         const prefix = keyValue ? keyValue.slice(0, 8) : ''
         return {
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
           name: doc.name,
           key: keyValue,
           prefix,
-          permissions: Array.isArray(perms) ? perms : [],
+          permissions: perms,
           isActive: !!doc.isActive,
           createdAt: doc.$createdAt || doc.createdAt,
           updatedAt: doc.$updatedAt || doc.updatedAt,
@@ -105,13 +105,22 @@ export async function POST(request: NextRequest) {
       userId,
       name,
       key: generateApiKey(),
-      permissions: JSON.stringify(permissions), // Convert array to JSON string for String type
+      permissions: permissions, // Keep as array since the schema expects array
       isActive: true,
       createdAt: new Date().toISOString() // Add the required createdAt attribute
     }
     
     try {
       console.log('📝 Creating document with data:', newApiKey)
+      console.log('📝 Database ID:', DATABASE_ID)
+      console.log('📝 Collection ID:', COLLECTION_ID)
+      console.log('📝 Config check:', {
+        endpoint: config.appwrite.endpoint,
+        projectId: config.appwrite.projectId,
+        hasApiKey: !!config.appwrite.apiKey,
+        databaseId: DATABASE_ID,
+        collectionId: COLLECTION_ID
+      })
       
       // Store the API key in Appwrite database
       const response = await databases.createDocument(
@@ -133,7 +142,7 @@ export async function POST(request: NextRequest) {
           name: response.name,
           key: response.key,
           prefix,
-          permissions: JSON.parse(response.permissions), // Parse JSON string back to array
+          permissions: response.permissions, // Already an array
           isActive: response.isActive,
           createdAt: response.$createdAt,
           updatedAt: response.$updatedAt
@@ -147,8 +156,32 @@ export async function POST(request: NextRequest) {
         message: dbError.message,
         response: dbError.response
       })
+      console.error('Database connection details:', {
+        endpoint: config.appwrite.endpoint,
+        projectId: config.appwrite.projectId,
+        databaseId: DATABASE_ID,
+        collectionId: COLLECTION_ID,
+        hasApiKey: !!config.appwrite.apiKey
+      })
+      
+      // Check if it's a collection not found error
+      if (dbError.code === 404 || dbError.message?.includes('collection') || dbError.message?.includes('not found')) {
+        return NextResponse.json(
+          { error: 'API Keys collection not found. Please run the setup script first.', details: dbError.message },
+          { status: 500 }
+        )
+      }
+      
+      // Check if it's an authentication error
+      if (dbError.code === 401 || dbError.message?.includes('unauthorized') || dbError.message?.includes('permission')) {
+        return NextResponse.json(
+          { error: 'Database authentication failed. Check API key configuration.', details: dbError.message },
+          { status: 500 }
+        )
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to save API key to database' },
+        { error: 'Failed to save API key to database', details: dbError.message },
         { status: 500 }
       )
     }

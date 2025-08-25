@@ -362,7 +362,7 @@ export default function VerifyPage() {
         }
       } catch (e) {
         // fallback to client-side saved state if process endpoint fails
-        await updateVerificationStatus('completed', results)
+      await updateVerificationStatus('completed', results)
       }
 
       console.log('✅ Verification completed and saved to database')
@@ -589,7 +589,7 @@ export default function VerifyPage() {
               <p className="text-xs text-gray-500 mt-3">Don’t refresh this page.</p>
             </div>
           )}
-
+          
           {verificationStatus === 'completed' && verificationResult && (
             <div ref={successSectionRef} tabIndex={-1} className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6" aria-label="Verification results">
               <h3 className="font-semibold text-green-900 mb-4 text-lg flex items-center">
@@ -598,16 +598,16 @@ export default function VerifyPage() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {verificationResult.name && (
-                  <div className="flex items-center space-x-3">
-                    <User className="h-5 w-5 text-green-600" />
-                    <span className="text-green-800"><strong>Name:</strong> {verificationResult.name}</span>
-                  </div>
+                <div className="flex items-center space-x-3">
+                  <User className="h-5 w-5 text-green-600" />
+                  <span className="text-green-800"><strong>Name:</strong> {verificationResult.name}</span>
+                </div>
                 )}
                 {verificationResult.documentType && (
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-5 w-5 text-green-600" />
-                    <span className="text-green-800"><strong>Document:</strong> {verificationResult.documentType}</span>
-                  </div>
+                <div className="flex items-center space-x-3">
+                  <FileText className="h-5 w-5 text-green-600" />
+                  <span className="text-green-800"><strong>Document:</strong> {verificationResult.documentType}</span>
+                </div>
                 )}
                 <div className="flex items-center space-x-3">
                   <Shield className="h-5 w-5 text-green-600" />
@@ -731,7 +731,7 @@ export default function VerifyPage() {
               <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 flex items-center">
                 <Upload className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 mr-2 sm:mr-3 text-blue-600" />
                 Verification Input
-              </h3>
+            </h3>
               <div className="flex flex-wrap items-center gap-2">
                 <label className={`px-2 sm:px-3 py-1.5 rounded-lg border text-xs sm:text-sm cursor-pointer transition-colors whitespace-nowrap ${verificationMethod==='document'?'bg-blue-50 border-blue-300 text-blue-700':'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'}`}
                   onClick={() => setVerificationMethod('document')}>Document</label>
@@ -755,21 +755,21 @@ export default function VerifyPage() {
                 </p>
                 <p className="text-xs text-gray-600 mb-4 sm:mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-2 sm:p-3">
                   <strong>Important:</strong> Birth certificates, utility bills, and other non-photo documents are NOT accepted as ID documents.
-                </p>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*,.pdf"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label
-                  htmlFor="file-upload"
+              </p>
+              <input
+                type="file"
+                multiple
+                accept="image/*,.pdf"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="file-upload"
+              />
+              <label
+                htmlFor="file-upload"
                   className="bg-blue-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg cursor-pointer hover:bg-blue-700 transition-colors font-medium text-base sm:text-lg inline-block"
-                >
+              >
                   Choose ID Document
-                </label>
+              </label>
                 {validationErrors.length > 0 && (
                   <div className="text-left mt-4">
                     <ul className="text-red-600 text-xs sm:text-sm space-y-1">
@@ -806,7 +806,7 @@ export default function VerifyPage() {
                   onCapture={(b) => addCapturedFile(b, `liveness_${Date.now()}.webm`, 'video/webm')}
                 />
                 <p className="text-sm text-gray-500 mt-3">Record a short video for liveness. Keep your face in frame.</p>
-              </div>
+            </div>
             )}
 
             {/* Selected/Captured Items */}
@@ -868,15 +868,15 @@ export default function VerifyPage() {
                               <option value="face_photo">📸 Face Photo</option>
                               <option value="face_video">🎥 Face Video</option>
                             </select>
-                          </div>
+                      </div>
                           
                           {/* Remove Button */}
-                          <button
-                            onClick={() => removeDocument(index)}
+                      <button
+                        onClick={() => removeDocument(index)}
                             className="text-red-600 hover:text-red-800 text-sm font-medium hover:bg-red-50 px-3 py-2 rounded transition-colors self-start sm:self-auto"
-                          >
-                            Remove
-                          </button>
+                      >
+                        Remove
+                      </button>
                         </div>
                       </div>
                     )
