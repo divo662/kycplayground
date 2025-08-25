@@ -10,6 +10,7 @@
     "type-check": "tsc --noEmit",
     "setup-appwrite": "node scripts/setup-appwrite.js",
     "setup-cors": "node scripts/setup-cors.js",
+    "fix-cors": "node scripts/fix-cors.js",
     "setup-database": "node scripts/setup-webhook-database.js",
     "setup-api-keys": "node scripts/setup-api-keys-collection.js",
     "setup-verification-sessions": "node scripts/setup-verification-sessions.js"

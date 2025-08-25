@@ -4,6 +4,7 @@ import {
   securityHeadersMiddleware, 
   requestLoggingMiddleware 
 } from './lib/security'
+import { config as appConfig } from './lib/config'
 
 export async function middleware(request: NextRequest) {
   const startTime = Date.now()
@@ -22,7 +23,7 @@ export async function middleware(request: NextRequest) {
     
     // Check if origin is allowed
     if (origin) {
-      const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:5500', 'http://localhost:8080', 'http://localhost:8000']
+      const allowedOrigins = appConfig.cors.origins
       
       if (allowedOrigins.includes(origin) || (process.env.NODE_ENV === 'development' && (origin.includes('localhost') || origin.includes('127.0.0.1')))) {
         return new NextResponse(null, {
