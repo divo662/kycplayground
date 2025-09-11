@@ -88,6 +88,10 @@ function DashboardContent() {
     averageResponseTime: 0
   })
   const [webhooks, setWebhooks] = useState<WebhookConfig[]>([])
+  // Edit state
+  const [editingId, setEditingId] = useState<string>('')
+  const [editForm, setEditForm] = useState<{ name: string; webhookUrl: string; events: string[]; isActive: boolean }>({ name: '', webhookUrl: '', events: [], isActive: true })
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [analyticsSeries, setAnalyticsSeries] = useState<any[]>([])
@@ -99,6 +103,11 @@ function DashboardContent() {
     webhookUrl: '',
     events: ['verification.completed', 'verification.failed']
   })
+
+  // API key selection for webhook actions
+  const [apiKeys, setApiKeys] = useState<Array<{ id: string; name: string; prefix?: string; key?: string }>>([])
+  const [selectedApiKeyId, setSelectedApiKeyId] = useState<string>('')
+  const [manualApiKey, setManualApiKey] = useState<string>('')
 
   useEffect(() => {
     if (user) {
@@ -136,6 +145,29 @@ function DashboardContent() {
 
     loadWebhooks()
   }, [])
+
+  useEffect(() => {
+    // Load keys for selection
+    const loadKeys = async () => {
+      try {
+        const res = await fetch('/api/api-keys')
+        const data = await res.json()
+        if (res.ok && data?.success) {
+          setApiKeys(data.apiKeys)
+        }
+      } catch {}
+    }
+    loadKeys()
+  }, [])
+
+  // Helper to resolve header key
+  const resolveApiKey = (): string | null => {
+    const pasted = manualApiKey.trim()
+    if (pasted) return pasted
+    const found = apiKeys.find(k => k.id === selectedApiKeyId)
+    if (found?.key) return found.key
+    return null
+  }
 
   const loadDashboardData = async () => {
     try {
@@ -208,12 +240,17 @@ function DashboardContent() {
       toast.error('Please fill in all required fields')
       return
     }
+    const headerKey = resolveApiKey()
+    if (!headerKey) {
+      toast.error('Select or paste an API key')
+      return
+    }
 
     try {
       // Create webhook in database
       const res = await fetch('/api/webhooks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': headerKey },
         body: JSON.stringify({
           name: webhookForm.name,
           webhookUrl: webhookForm.webhookUrl,
@@ -249,8 +286,13 @@ function DashboardContent() {
   }
 
   const handleDeleteWebhook = async (webhookId: string) => {
+    const headerKey = resolveApiKey()
+    if (!headerKey) {
+      toast.error('Select or paste an API key')
+      return
+    }
     try {
-      const res = await fetch(`/api/webhooks/${webhookId}`, { method: 'DELETE' })
+      const res = await fetch(`/api/webhooks/${webhookId}`, { method: 'DELETE', headers: { 'X-API-Key': headerKey } })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       if (!data.success) throw new Error(data.error || 'Failed to delete webhook')
@@ -304,12 +346,17 @@ function DashboardContent() {
   }
 
   const toggleWebhookStatus = async (webhookId: string) => {
+    const headerKey = resolveApiKey()
+    if (!headerKey) {
+      toast.error('Select or paste an API key')
+      return
+    }
     try {
       const current = webhooks.find(w => w.$id === webhookId)
       if (!current) return
       const res = await fetch(`/api/webhooks/${webhookId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': headerKey },
         body: JSON.stringify({ isActive: !current.isActive })
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -328,6 +375,61 @@ function DashboardContent() {
     } catch (error) {
       console.error('Error updating webhook status:', error)
       toast.error('Failed to update webhook status.')
+    }
+  }
+
+  const startEditWebhook = (w: WebhookConfig) => {
+    setEditingId(w.$id)
+    setEditForm({ name: w.name, webhookUrl: w.webhookUrl, events: [...w.events], isActive: w.isActive })
+  }
+
+  const cancelEditWebhook = () => {
+    setEditingId('')
+    setIsSavingEdit(false)
+  }
+
+  const saveEditWebhook = async () => {
+    const headerKey = resolveApiKey()
+    if (!headerKey) {
+      toast.error('Select or paste an API key')
+      return
+    }
+    if (!editingId) return
+    if (!editForm.name?.trim() || !editForm.webhookUrl?.trim()) {
+      toast.error('Name and URL are required')
+      return
+    }
+    try {
+      setIsSavingEdit(true)
+      const res = await fetch(`/api/webhooks/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': headerKey },
+        body: JSON.stringify({
+          name: editForm.name.trim(),
+          webhookUrl: editForm.webhookUrl.trim(),
+          events: editForm.events,
+          isActive: editForm.isActive
+        })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || `HTTP ${res.status}`)
+      }
+      const updated = data.webhook
+      setWebhooks(prev => prev.map(w => w.$id === editingId ? {
+        ...w,
+        name: updated.name,
+        webhookUrl: updated.webhookUrl,
+        events: updated.events,
+        isActive: updated.isActive
+      } : w))
+      toast.success('Webhook updated')
+      setEditingId('')
+    } catch (e) {
+      console.error('Edit webhook error:', e)
+      toast.error('Failed to update webhook')
+    } finally {
+      setIsSavingEdit(false)
     }
   }
 
@@ -627,7 +729,7 @@ function DashboardContent() {
           </div>
         ) : activeTab === 'webhooks' ? (
           <div className="space-y-6">
-            {/* Webhook Header */}
+            {/* Webhook Header with API key controls */}
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-medium text-gray-900">Webhook Configuration</h3>
@@ -635,21 +737,42 @@ function DashboardContent() {
                   Configure webhooks to receive real-time notifications when verifications are completed.
                 </p>
               </div>
-              <div className="flex space-x-3">
-                <Link
-                  href="/dashboard/webhooks"
-                  className="flex items-center space-x-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  <TestTube className="h-4 w-4" />
-                  <span>Test Webhooks</span>
-                </Link>
-                <button
-                  onClick={() => setShowWebhookForm(true)}
-                  className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Add Webhook</span>
-                </button>
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                <div className="flex gap-2 items-center">
+                  <select
+                    value={selectedApiKeyId}
+                    onChange={(e) => setSelectedApiKeyId(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="">— Select API Key —</option>
+                    {apiKeys.map(k => (
+                      <option key={k.id} value={k.id}>{k.name}{k.prefix ? ` (${k.prefix}...)` : ''}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Or paste API key (kyc_...)"
+                    value={manualApiKey}
+                    onChange={(e) => setManualApiKey(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm w-56"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Link
+                    href="/dashboard/webhooks"
+                    className="flex items-center space-x-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    <TestTube className="h-4 w-4" />
+                    <span>Test Webhooks</span>
+                  </Link>
+                  <button
+                    onClick={() => setShowWebhookForm(true)}
+                    className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add Webhook</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -751,55 +874,111 @@ function DashboardContent() {
                   <div className="space-y-4">
                     {webhooks.map((webhook) => (
                       <div key={webhook.$id} className="border rounded-lg p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <h4 className="font-medium text-gray-900">{webhook.name}</h4>
-                              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                webhook.isActive 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
-                                {webhook.isActive ? 'Active' : 'Inactive'}
-                              </span>
+                        {editingId === webhook.$id ? (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                                <input
+                                  type="text"
+                                  value={editForm.name}
+                                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Webhook URL</label>
+                                <input
+                                  type="url"
+                                  value={editForm.webhookUrl}
+                                  onChange={(e) => setEditForm({ ...editForm, webhookUrl: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                />
+                              </div>
                             </div>
-                            <p className="text-sm text-gray-600 mb-2">{webhook.webhookUrl}</p>
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              {webhook.events.map((event) => (
-                                <span key={event} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                  {event}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Events</label>
+                              <div className="flex flex-wrap gap-3">
+                                {['verification.completed','verification.failed','verification.started','verification.pending'].map(ev => (
+                                  <label key={ev} className="inline-flex items-center gap-2 text-sm">
+                                    <input
+                                      type="checkbox"
+                                      checked={editForm.events.includes(ev)}
+                                      onChange={() => setEditForm(prev => ({
+                                        ...prev,
+                                        events: prev.events.includes(ev) ? prev.events.filter(e => e !== ev) : [...prev.events, ev]
+                                      }))}
+                                    />
+                                    <span>{ev}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input id={`active-${webhook.$id}`} type="checkbox" checked={editForm.isActive} onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })} />
+                              <label htmlFor={`active-${webhook.$id}`} className="text-sm text-gray-700">Active</label>
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={saveEditWebhook} disabled={isSavingEdit} className="bg-blue-600 text-white px-4 py-2 rounded-md disabled:opacity-50">
+                                {isSavingEdit ? 'Saving...' : 'Save'}
+                              </button>
+                              <button onClick={cancelEditWebhook} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md">Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-2">
+                                <h4 className="font-medium text-gray-900">{webhook.name}</h4>
+                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${webhook.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                  {webhook.isActive ? 'Active' : 'Inactive'}
                                 </span>
-                              ))}
+                              </div>
+                              <p className="text-sm text-gray-600 mb-2">{webhook.webhookUrl}</p>
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {webhook.events.map((event) => (
+                                  <span key={event} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                    {event}
+                                  </span>
+                                ))}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Created: {formatDate(webhook.createdAt)}
+                                {webhook.lastTriggered && ` • Last triggered: ${formatDate(webhook.lastTriggered)}`}
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-500">
-                              Created: {formatDate(webhook.createdAt)}
-                              {webhook.lastTriggered && ` • Last triggered: ${formatDate(webhook.lastTriggered)}`}
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => startEditWebhook(webhook)}
+                                className="text-gray-600 hover:text-gray-900 p-2"
+                                title="Edit webhook"
+                              >
+                                <Settings className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleTestWebhook(webhook)}
+                                className="text-blue-600 hover:text-blue-800 p-2"
+                                title="Test webhook"
+                              >
+                                <TestTube className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => toggleWebhookStatus(webhook.$id)}
+                                className="text-gray-400 hover:text-gray-600 p-2"
+                                title={webhook.isActive ? 'Deactivate Webhook' : 'Activate Webhook'}
+                              >
+                                {webhook.isActive ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteWebhook(webhook.$id)}
+                                className="text-red-600 hover:text-red-800 p-2"
+                                title="Delete webhook"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => handleTestWebhook(webhook)}
-                              className="text-blue-600 hover:text-blue-800 p-2"
-                              title="Test webhook"
-                            >
-                              <TestTube className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => toggleWebhookStatus(webhook.$id)}
-                              className="text-gray-400 hover:text-gray-600 p-2"
-                              title={webhook.isActive ? 'Deactivate Webhook' : 'Activate Webhook'}
-                            >
-                              {webhook.isActive ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteWebhook(webhook.$id)}
-                              className="text-red-600 hover:text-red-800 p-2"
-                              title="Delete webhook"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     ))}
                   </div>
