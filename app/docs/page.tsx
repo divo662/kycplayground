@@ -70,8 +70,6 @@ export default function DocsPage() {
                 { id: 'api-reference', name: 'API Reference', icon: Code },
                 { id: 'webhooks', name: 'Webhooks', icon: Webhook },
                 { id: 'verification', name: 'Verification Flow', icon: Webhook },
-                { id: 'developer-tools', name: 'Developer Tools', icon: Terminal },
-                { id: 'health', name: 'Health & Diagnostics', icon: Activity },
                 { id: 'errors', name: 'Errors', icon: AlertCircle },
                 { id: 'rate-limits', name: 'Rate Limits', icon: TrendingUp },
                 { id: 'security', name: 'Security', icon: Shield }
@@ -121,13 +119,13 @@ export default function DocsPage() {
                       <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
                         <span className="text-xs font-bold text-blue-600">2</span>
                       </div>
-                      <span className="text-blue-900">Download our <Link href="#developer-tools" onClick={() => setActiveTab('developer-tools')} className="underline">Developer Tools</Link></span>
+                      <span className="text-blue-900">Review the <Link href="#api-reference" onClick={() => setActiveTab('api-reference')} className="underline">API Reference</Link></span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
                         <span className="text-xs font-bold text-blue-600">3</span>
                       </div>
-                      <span className="text-blue-900">Test with our <Link href="#health" onClick={() => setActiveTab('health')} className="underline">Health & Diagnostics</Link></span>
+                      <span className="text-blue-900">Test webhooks in the <Link href="#webhooks" onClick={() => setActiveTab('webhooks')} className="underline">Webhooks</Link> section</span>
                     </div>
                   </div>
                 </div>
@@ -258,44 +256,7 @@ export default function DocsPage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Download Resources</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <FileText className="h-5 w-5 text-blue-600" />
-                        <h4 className="font-medium text-gray-900">Integration Guide</h4>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-3">Complete integration documentation with examples</p>
-                      <a 
-                        href="/integration-guide.md" 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        View Guide
-                      </a>
-                    </div>
-                    
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <Globe className="h-5 w-5 text-green-600" />
-                        <h4 className="font-medium text-gray-900">ngrok Guide</h4>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-3">Local webhook testing with ngrok</p>
-                      <a 
-                        href="/ngrok-webhook-guide.md" 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        View Guide
-                      </a>
-                    </div>
-                  </div>
-                </div>
+                {/* Download Resources removed */}
               </div>
             )}
 
@@ -308,29 +269,7 @@ export default function DocsPage() {
                   </p>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">OpenAPI Specification</h3>
-                  <p className="text-gray-600 mb-4">
-                    Download our complete OpenAPI 3.0.3 specification for all endpoints.
-                  </p>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium text-blue-900">OpenAPI 3.0.3 Spec</h4>
-                        <p className="text-sm text-blue-800">Complete API documentation in YAML format</p>
-                      </div>
-                      <a 
-                        href="/openapi-spec.yaml" 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-sm rounded-md hover:bg-blue-700"
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        View Spec
-                      </a>
-                    </div>
-                  </div>
-                </div>
+                {/* OpenAPI Specification section removed */}
 
                 <div className="bg-white rounded-lg shadow-sm border p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">API Endpoints</h3>
