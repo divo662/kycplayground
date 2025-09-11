@@ -30,15 +30,13 @@ export async function POST(
         key: generateApiKey(),
         permissions: current.permissions,
         isActive: true,
-        createdAt: new Date().toISOString(),
-        lastUsed: null
+        createdAt: new Date().toISOString()
       }
     )
 
     // Revoke old key (keep record with isActive=false)
     await databases.updateDocument(DATABASE_ID, COLLECTION_ID, params.id, {
-      isActive: false,
-      revokedAt: new Date().toISOString()
+      isActive: false
     })
 
     return NextResponse.json({

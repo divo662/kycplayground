@@ -92,6 +92,10 @@ function DashboardContent() {
   const [editingId, setEditingId] = useState<string>('')
   const [editForm, setEditForm] = useState<{ name: string; webhookUrl: string; events: string[]; isActive: boolean }>({ name: '', webhookUrl: '', events: [], isActive: true })
   const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [testingId, setTestingId] = useState<string>('')
+  const [togglingId, setTogglingId] = useState<string>('')
+  const [deletingId, setDeletingId] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [analyticsSeries, setAnalyticsSeries] = useState<any[]>([])
@@ -206,6 +210,32 @@ function DashboardContent() {
     }
   }
 
+  const refreshWebhooks = async () => {
+    try {
+      setIsRefreshing(true)
+      const res = await fetch('/api/webhooks')
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data?.success) throw new Error(data?.error || `HTTP ${res.status}`)
+      const list: WebhookConfig[] = data.webhooks.map((w: any) => ({
+        $id: w.$id,
+        name: w.name,
+        webhookUrl: w.webhookUrl,
+        events: w.events,
+        isActive: w.isActive,
+        lastTriggered: w.lastTriggered ? new Date(w.lastTriggered) : undefined,
+        createdAt: new Date(w.createdAt)
+      }))
+      setWebhooks(list)
+      setStats(prev => ({ ...prev, webhooksConfigured: list.length }))
+      toast.success('Webhooks refreshed')
+    } catch (e) {
+      console.error('Refresh webhooks error:', e)
+      toast.error('Failed to refresh webhooks')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
   // Load analytics series (daily counts for the last 14 days)
   const loadAnalytics = async () => {
     try {
@@ -292,6 +322,7 @@ function DashboardContent() {
       return
     }
     try {
+      setDeletingId(webhookId)
       const res = await fetch(`/api/webhooks/${webhookId}`, { method: 'DELETE', headers: { 'X-API-Key': headerKey } })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
@@ -305,11 +336,14 @@ function DashboardContent() {
     } catch (error) {
       console.error('Error deleting webhook:', error)
       toast.error('Failed to delete webhook.')
+    } finally {
+      setDeletingId('')
     }
   }
 
   const handleTestWebhook = async (webhook: WebhookConfig) => {
     try {
+      setTestingId(webhook.$id)
       // Call server-side test endpoint to avoid browser CSP/connect-src
       const testPayload = {
         event: 'verification.completed',
@@ -342,6 +376,8 @@ function DashboardContent() {
     } catch (error) {
       console.error('Error testing webhook:', error)
       toast.error('Failed to test webhook.')
+    } finally {
+      setTestingId('')
     }
   }
 
@@ -352,6 +388,7 @@ function DashboardContent() {
       return
     }
     try {
+      setTogglingId(webhookId)
       const current = webhooks.find(w => w.$id === webhookId)
       if (!current) return
       const res = await fetch(`/api/webhooks/${webhookId}`, {
@@ -375,6 +412,8 @@ function DashboardContent() {
     } catch (error) {
       console.error('Error updating webhook status:', error)
       toast.error('Failed to update webhook status.')
+    } finally {
+      setTogglingId('')
     }
   }
 
@@ -758,6 +797,15 @@ function DashboardContent() {
                   />
                 </div>
                 <div className="flex gap-3">
+                  <button
+                    onClick={refreshWebhooks}
+                    disabled={isRefreshing}
+                    className="flex items-center space-x-2 bg-gray-100 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                    title="Refresh webhooks"
+                  >
+                    <Clock className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+                  </button>
                   <Link
                     href="/dashboard/webhooks"
                     className="flex items-center space-x-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
@@ -767,7 +815,9 @@ function DashboardContent() {
                   </Link>
                   <button
                     onClick={() => setShowWebhookForm(true)}
-                    className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    disabled={!resolveApiKey()}
+                    title={!resolveApiKey() ? 'Select or paste an API key to enable' : ''}
                   >
                     <Plus className="h-4 w-4" />
                     <span>Add Webhook</span>
@@ -950,31 +1000,35 @@ function DashboardContent() {
                             <div className="flex items-center space-x-2">
                               <button
                                 onClick={() => startEditWebhook(webhook)}
-                                className="text-gray-600 hover:text-gray-900 p-2"
-                                title="Edit webhook"
+                                className="text-gray-600 hover:text-gray-900 p-2 disabled:opacity-50"
+                                disabled={!resolveApiKey()}
+                                title={!resolveApiKey() ? 'Select or paste an API key to enable' : 'Edit webhook'}
                               >
                                 <Settings className="h-4 w-4" />
                               </button>
                               <button
                                 onClick={() => handleTestWebhook(webhook)}
-                                className="text-blue-600 hover:text-blue-800 p-2"
+                                className="text-blue-600 hover:text-blue-800 p-2 disabled:opacity-50"
+                                disabled={testingId === webhook.$id}
                                 title="Test webhook"
                               >
-                                <TestTube className="h-4 w-4" />
+                                <TestTube className={`h-4 w-4 ${testingId === webhook.$id ? 'animate-spin' : ''}`} />
                               </button>
                               <button
                                 onClick={() => toggleWebhookStatus(webhook.$id)}
-                                className="text-gray-400 hover:text-gray-600 p-2"
+                                className="text-gray-400 hover:text-gray-600 p-2 disabled:opacity-50"
+                                disabled={!resolveApiKey() || togglingId === webhook.$id}
                                 title={webhook.isActive ? 'Deactivate Webhook' : 'Activate Webhook'}
                               >
-                                {webhook.isActive ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                                {webhook.isActive ? <XCircle className={`h-4 w-4 ${togglingId === webhook.$id ? 'animate-pulse' : ''}`} /> : <CheckCircle className={`h-4 w-4 ${togglingId === webhook.$id ? 'animate-pulse' : ''}`} />}
                               </button>
                               <button
                                 onClick={() => handleDeleteWebhook(webhook.$id)}
-                                className="text-red-600 hover:text-red-800 p-2"
+                                className="text-red-600 hover:text-red-800 p-2 disabled:opacity-50"
+                                disabled={!resolveApiKey() || deletingId === webhook.$id}
                                 title="Delete webhook"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className={`h-4 w-4 ${deletingId === webhook.$id ? 'animate-pulse' : ''}`} />
                               </button>
                             </div>
                           </div>

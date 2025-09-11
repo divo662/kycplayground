@@ -11,8 +11,7 @@ export async function POST(
 ) {
   try {
     const updated = await databases.updateDocument(DATABASE_ID, COLLECTION_ID, params.id, {
-      isActive: false,
-      revokedAt: new Date().toISOString()
+      isActive: false
     })
 
     return NextResponse.json({ success: true, id: updated.$id })
