@@ -503,18 +503,6 @@ function DashboardContent() {
                   </div>
                 </div>
               </Link>
-
-              <Link href="/dashboard/health" className="bg-orange-600 text-white p-6 rounded-lg hover:bg-orange-700 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-orange-500 p-2 rounded-lg">
-                    <Activity className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Health & Diagnostics</h3>
-                    <p className="text-orange-100 text-sm">Monitor system health</p>
-                  </div>
-                </div>
-              </Link>
             </div>
 
             {/* Recent Activity */}

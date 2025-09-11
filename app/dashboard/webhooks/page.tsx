@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ArrowLeft, TestTube, Send, CheckCircle, XCircle, Clock, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { useAuthStore } from '@/lib/store'
@@ -32,6 +32,35 @@ function WebhookTestContent() {
   const [selectedEvent, setSelectedEvent] = useState('verification.completed')
   const [isLoading, setIsLoading] = useState(false)
   const [testResults, setTestResults] = useState<TestResult[]>([])
+
+  // New state for Create Webhook UI
+  const [apiKeys, setApiKeys] = useState<Array<{ id: string; name: string; prefix?: string; key?: string }>>([])
+  const [selectedApiKeyId, setSelectedApiKeyId] = useState<string>('')
+  const [manualApiKey, setManualApiKey] = useState<string>('')
+
+  const [createName, setCreateName] = useState('')
+  const [createUrl, setCreateUrl] = useState('')
+  const [createEvents, setCreateEvents] = useState<string[]>(['verification.completed','verification.failed','verification.started'])
+  const [createActive, setCreateActive] = useState(true)
+  const [isCreating, setIsCreating] = useState(false)
+
+  useEffect(() => {
+    // Fetch API keys to populate selector
+    const loadKeys = async () => {
+      try {
+        const res = await fetch('/api/api-keys', { method: 'GET' })
+        const data = await res.json()
+        if (res.ok && data?.apiKeys) {
+          setApiKeys(data.apiKeys)
+        } else {
+          console.warn('Failed to load API keys', data)
+        }
+      } catch (e) {
+        console.warn('Failed to fetch API keys', e)
+      }
+    }
+    loadKeys()
+  }, [])
 
   const eventTypes = [
     { 
@@ -173,6 +202,55 @@ function WebhookTestContent() {
     setTestResults([])
   }
 
+  // Create webhook handler
+  const handleCreateWebhook = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const headerKey = manualApiKey?.trim() || (apiKeys.find(k => k.id === selectedApiKeyId)?.key || '')
+    if (!headerKey) {
+      toast.error('Select or paste an API key')
+      return
+    }
+    if (!createName?.trim() || !createUrl?.trim()) {
+      toast.error('Name and URL are required')
+      return
+    }
+
+    try {
+      setIsCreating(true)
+      const res = await fetch('/api/webhooks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': headerKey,
+        },
+        body: JSON.stringify({
+          name: createName.trim(),
+          webhookUrl: createUrl.trim(),
+          events: createEvents,
+          isActive: !!createActive,
+        })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(data?.error || 'Failed to create webhook')
+        return
+      }
+      toast.success('Webhook created')
+      // Reset minimal fields
+      setCreateName('')
+      setCreateUrl('')
+    } catch (err: any) {
+      toast.error('Network error creating webhook')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  const toggleEvent = (value: string) => {
+    setCreateEvents(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value])
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -196,6 +274,96 @@ function WebhookTestContent() {
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Create Webhook */}
+        <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Create Webhook</h2>
+          <form onSubmit={handleCreateWebhook} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                <input
+                  type="text"
+                  value={createName}
+                  onChange={(e) => setCreateName(e.target.value)}
+                  placeholder="Production Webhook"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Webhook URL</label>
+                <input
+                  type="url"
+                  value={createUrl}
+                  onChange={(e) => setCreateUrl(e.target.value)}
+                  placeholder="https://your-app.com/webhooks/kyc"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Events</label>
+              <div className="flex flex-wrap gap-3">
+                {eventTypes.map(event => (
+                  <label key={event.value} className="inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={createEvents.includes(event.value)}
+                      onChange={() => toggleEvent(event.value)}
+                    />
+                    <span className="text-sm">{event.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input id="active" type="checkbox" checked={createActive} onChange={(e) => setCreateActive(e.target.checked)} />
+              <label htmlFor="active" className="text-sm text-gray-700">Active</label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select API Key</label>
+                <select
+                  value={selectedApiKeyId}
+                  onChange={(e) => setSelectedApiKeyId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">— Choose from existing —</option>
+                  {apiKeys.map(k => (
+                    <option key={k.id} value={k.id}>{k.name} {k.prefix ? `(${k.prefix}...)` : ''}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Keys listed from your account. Alternatively paste a key.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Or paste API Key</label>
+                <input
+                  type="text"
+                  value={manualApiKey}
+                  onChange={(e) => setManualApiKey(e.target.value)}
+                  placeholder="kyc_..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={isCreating}
+                className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCreating ? <Clock className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                <span>{isCreating ? 'Creating...' : 'Create Webhook'}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
         {/* Test Form */}
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Test Your Webhook</h2>
