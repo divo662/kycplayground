@@ -219,7 +219,7 @@ export default function DocsPage() {
                       </p>
                       <div className="bg-gray-900 rounded-lg p-3">
                         <code className="text-green-400 text-sm">
-                          {`curl -X POST http://localhost:3000/api/api-keys \\
+                          {`curl -X POST https://kycplayground.vercel.app/api/api-keys \\
   -H "Content-Type: application/json" \\
   -d '{"name": "Production Key", "permissions": ["verifications:create"]}'`}
                         </code>
@@ -233,10 +233,10 @@ export default function DocsPage() {
                       </p>
                       <div className="bg-gray-900 rounded-lg p-3">
                         <code className="text-green-400 text-sm">
-                          {`curl -X POST http://localhost:3000/api/webhooks \\
+                          {`curl -X POST https://kycplayground.vercel.app/api/webhooks \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: YOUR_API_KEY" \\
-  -d '{"url": "https://your-app.com/webhooks/kyc", "events": ["verification.completed"]}'`}
+  -d '{"name": "My Webhook", "webhookUrl": "https://your-app.com/webhooks/kyc", "events": ["verification.completed"]}'`}
                         </code>
                       </div>
                     </div>
@@ -248,7 +248,7 @@ export default function DocsPage() {
                       </p>
                       <div className="bg-gray-900 rounded-lg p-3">
                         <code className="text-green-400 text-sm">
-                          {`curl -X POST http://localhost:3000/api/verifications/create \\
+                          {`curl -X POST https://kycplayground.vercel.app/api/verifications/create \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: YOUR_API_KEY" \\
   -d '{"webhookUrl": "https://your-app.com/webhooks/kyc", "returnUrl": "https://your-app.com/callback"}'`}
