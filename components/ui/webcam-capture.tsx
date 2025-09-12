@@ -52,15 +52,28 @@ export default function WebcamCapture({
     try {
       const imageSrc = webcamRef.current.getScreenshot()
       if (imageSrc) {
-        // Convert data URL to blob
+        // Try fetch first (CSP-allowed), fallback to manual conversion
         fetch(imageSrc)
           .then(res => res.blob())
           .then(blob => {
             onCapture(blob)
           })
           .catch(err => {
-            console.error('Error converting image to blob:', err)
-            setError('Failed to capture photo')
+            console.error('Fetch failed, trying manual conversion:', err)
+            // Fallback: manual data URL to blob conversion
+            try {
+              const byteCharacters = atob(imageSrc.split(',')[1])
+              const byteNumbers = new Array(byteCharacters.length)
+              for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i)
+              }
+              const byteArray = new Uint8Array(byteNumbers)
+              const blob = new Blob([byteArray], { type: 'image/jpeg' })
+              onCapture(blob)
+            } catch (fallbackErr) {
+              console.error('Manual conversion also failed:', fallbackErr)
+              setError('Failed to capture photo')
+            }
           })
       } else {
         setError('Failed to capture photo')

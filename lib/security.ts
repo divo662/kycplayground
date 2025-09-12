@@ -323,7 +323,7 @@ export function securityHeadersMiddleware(response: NextResponse, request?: Next
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https: blob:",
     "font-src 'self'",
-    "connect-src 'self' https://fra.cloud.appwrite.io https://cloud.appwrite.io",
+    "connect-src 'self' data: blob: https://fra.cloud.appwrite.io https://cloud.appwrite.io",
     "frame-ancestors 'none'",
     "media-src 'self' blob:",
   ].join('; ')
