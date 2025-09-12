@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Head from 'next/head'
 import { Upload, CheckCircle, AlertCircle, Clock, FileText, User, Calendar, Shield, RefreshCw, RotateCcw } from 'lucide-react'
 import { FileUploadService } from '@/lib/file-upload-service'
-import CameraCapture from '@/components/ui/camera-capture'
+import WebcamCapture from '@/components/ui/webcam-capture'
 
 interface VerificationSessionRecord {
   id: string
@@ -784,9 +784,9 @@ export default function VerifyPage() {
 
             {verificationMethod === 'face_photo' && (
               <div>
-                <CameraCapture
+                <WebcamCapture
                   mode="photo"
-                  autoStart={false}
+                  autoStart={true}
                   facingMode="user"
                   onCapture={(b) => addCapturedFile(b, `face_${Date.now()}.jpg`, 'image/jpeg')}
                 />
@@ -796,11 +796,11 @@ export default function VerifyPage() {
 
             {verificationMethod === 'face_video' && (
               <div>
-                <CameraCapture
+                <WebcamCapture
                   mode="video"
                   maxDurationMs={5000}
                   enableLivenessPrompts
-                  autoStart={false}
+                  autoStart={true}
                   facingMode="user"
                   prompts={["Look straight", "Turn head left", "Turn head right", "Blink", "Smile"]}
                   onCapture={(b) => addCapturedFile(b, `liveness_${Date.now()}.webm`, 'video/webm')}
