@@ -83,16 +83,27 @@ export default function VerifyPage() {
   }, [documents.length, verificationStatus])
 
   const resolvedReturnUrl = useMemo(() => {
-    if (returnUrl) return returnUrl
-    if (session?.redirectUrl) {
+    let baseUrl = returnUrl
+    if (!baseUrl && session?.redirectUrl) {
       try {
         const url = new URL(session.redirectUrl)
         const fromSession = url.searchParams.get('returnUrl')
-        if (fromSession) return fromSession
+        if (fromSession) baseUrl = fromSession
       } catch {}
     }
-    return '/dashboard'
-  }, [returnUrl, session])
+    if (!baseUrl) return '/dashboard'
+    
+    // Append session ID to the callback URL
+    try {
+      const url = new URL(baseUrl)
+      url.searchParams.set('sessionId', sessionId)
+      return url.toString()
+    } catch {
+      // If URL parsing fails, append session ID manually
+      const separator = baseUrl.includes('?') ? '&' : '?'
+      return `${baseUrl}${separator}sessionId=${sessionId}`
+    }
+  }, [returnUrl, session, sessionId])
 
   useEffect(() => {
     fetchSessionDetails()
