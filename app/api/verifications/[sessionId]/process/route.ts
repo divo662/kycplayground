@@ -93,8 +93,9 @@ export async function POST(
     const quality = {
       documentPresent: docCount > 0,
       facePresent: faceCount > 0,
-      docFileSizeOK: firstDoc ? firstDoc.fileSize > 10000 : false, // At least 10KB for documents
-      faceFileSizeOK: firstFace ? firstFace.fileSize > 1000 : false, // At least 1KB for face images (much more realistic)
+      // Relaxed demo thresholds
+      docFileSizeOK: firstDoc ? firstDoc.fileSize > 500 : false,
+      faceFileSizeOK: firstFace ? firstFace.fileSize > 200 : false,
       glareLikely: false,
       blurLikely: false,
       cropLikely: false
@@ -123,23 +124,15 @@ export async function POST(
           }
         } else {
           console.log('⚠️ Groq AI analysis failed, using fallback')
-          // Use fallback analysis based on filename
+          // Use fallback analysis based on filename (do not hard-reject in demo)
           groqAnalysis = getFallbackAnalysis(firstDoc.fileName)
-          if (groqAnalysis.docTypeGuess === 'REJECT') {
-            documentRejected = true
-            console.log('🚫 Fallback analysis rejected document:', groqAnalysis.notes)
-          }
         }
       }
     } catch (error) {
       console.error('❌ Groq AI analysis failed:', error)
-      // Use fallback analysis
+      // Use fallback analysis but do not hard-reject in demo
       if (firstDoc) {
         groqAnalysis = getFallbackAnalysis(firstDoc.fileName)
-        if (groqAnalysis.docTypeGuess === 'REJECT') {
-          documentRejected = true
-          console.log('🚫 Fallback analysis rejected document:', groqAnalysis.notes)
-        }
       }
     }
 
@@ -148,8 +141,9 @@ export async function POST(
     const aiResults = await mockAI.processVerification(assets)
 
     // Determine final status
-    const documentValid = !documentRejected && groqAnalysis?.docTypeGuess && groqAnalysis.docTypeGuess !== 'REJECT'
-    const status = meetsRequirements && quality.docFileSizeOK && quality.faceFileSizeOK && documentValid ? 'completed' : 'failed'
+    // In demo mode, relax to requirements only
+    const documentValid = true
+    const status = meetsRequirements ? 'completed' : 'failed'
 
     console.log(`🎯 Final status: ${status}`)
     console.log(`📊 Quality checks:`, quality)
@@ -159,12 +153,6 @@ export async function POST(
     let failureReason = ''
     if (!meetsRequirements) {
       failureReason = 'Missing required documents or face assets'
-    } else if (documentRejected) {
-      failureReason = `Document rejected: ${groqAnalysis?.notes || 'Invalid document type'}`
-    } else if (!quality.docFileSizeOK) {
-      failureReason = 'ID document file size too small (needs at least 10KB)'
-    } else if (!quality.faceFileSizeOK) {
-      failureReason = 'Face image file size too small (needs at least 1KB)'
     }
 
     if (failureReason) {

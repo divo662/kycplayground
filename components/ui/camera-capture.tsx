@@ -41,7 +41,7 @@ export default function CameraCapture({
     async function init() {
       if (!autoStart || started) return
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: mode === 'video' })
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: mode === 'video' })
         if (cancelled) return
         mediaStreamRef.current = stream
         if (videoRef.current) {
@@ -64,12 +64,16 @@ export default function CameraCapture({
   const startCamera = async () => {
     try {
       setError(null)
+      const supports = (navigator.mediaDevices as any).getSupportedConstraints?.() || {}
+      const videoConstraints: MediaTrackConstraints = {
+        facingMode,
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        ...(supports.aspectRatio ? { aspectRatio: 16/9 } : {}),
+        ...(supports.frameRate ? { frameRate: { ideal: 30 } } : {}),
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }, 
+        video: videoConstraints, 
         audio: mode === 'video' 
       })
       mediaStreamRef.current = stream
@@ -79,6 +83,8 @@ export default function CameraCapture({
         videoRef.current.onloadedmetadata = () => {
           videoRef.current?.play().catch(console.error)
         }
+        // iOS Safari sometimes needs a nudge after setting srcObject
+        await videoRef.current.play().catch(() => {})
       }
       setStarted(true)
     } catch (e: any) {
