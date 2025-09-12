@@ -96,6 +96,17 @@ export default function VerifyPage() {
 
   useEffect(() => {
     fetchSessionDetails()
+    
+    // Add timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.error('❌ Session fetch timeout')
+        setError('Session loading timeout - please refresh the page')
+        setLoading(false)
+      }
+    }, 10000) // 10 second timeout
+    
+    return () => clearTimeout(timeout)
   }, [sessionId])
 
   // Animate processing checklist steps when in processing state
@@ -124,6 +135,11 @@ export default function VerifyPage() {
       console.log('🔍 Fetching session:', sessionId)
       const response = await fetch(`/api/verifications/${sessionId}`)
       console.log('📡 Response status:', response.status)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const data = await response.json()
       console.log('📄 Response data:', data)
       
@@ -154,12 +170,14 @@ export default function VerifyPage() {
           }
         }
       } else {
+        console.error('❌ Session fetch failed:', data.error)
         setError('Session not found')
       }
     } catch (error) {
       console.error('❌ Error fetching session:', error)
       setError('Failed to load session')
     } finally {
+      console.log('✅ Setting loading to false')
       setLoading(false)
     }
   }
@@ -469,6 +487,13 @@ export default function VerifyPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading verification session...</p>
+          <p className="text-sm text-gray-500 mt-2">If this takes too long, please refresh the page</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 text-blue-600 hover:text-blue-800 underline"
+          >
+            Refresh Page
+          </button>
         </div>
       </div>
     )
