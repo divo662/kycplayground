@@ -40,7 +40,9 @@ export async function POST(request: NextRequest) {
       : `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     // Create verification record in database (include required attributes for schema)
-    const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'https://kycplayground.vercel.app'
     const redirectUrl = returnUrl
       ? `${appBaseUrl}/verify/${sessionId}?returnUrl=${encodeURIComponent(returnUrl)}`
       : `${appBaseUrl}/verify/${sessionId}`
