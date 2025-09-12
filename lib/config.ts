@@ -28,9 +28,7 @@ export const config = {
     },
   },
   app: {
-    url: process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'https://kycplayground.vercel.app',
+    url: 'https://kycplayground.vercel.app',
     name: process.env.NEXT_PUBLIC_APP_NAME || 'KYCPlayground',
     version: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
     env: process.env.NODE_ENV || 'development',

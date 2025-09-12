@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'https://kycplayground.vercel.app';
+    const baseUrl = 'https://kycplayground.vercel.app';
     const endpoints = [
       '/api/verifications/create',
       '/api/webhooks',
