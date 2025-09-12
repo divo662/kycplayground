@@ -149,7 +149,8 @@ export default function VerifyPage() {
         if (data.data.status === 'completed') {
           setBanner({ type: 'success', message: 'Verification completed successfully.' })
           // Trigger redirect for already completed verifications
-          const redirectUrl = data.data.redirectUrl || resolvedReturnUrl
+          // Use resolvedReturnUrl (callback URL) instead of data.data.redirectUrl (verification page URL)
+          const redirectUrl = resolvedReturnUrl
           if (redirectUrl && redirectUrl !== '/dashboard') {
             setShowRedirectModal(true)
             setTimeout(() => {
@@ -389,7 +390,8 @@ export default function VerifyPage() {
 
       console.log('✅ Verification completed and saved to database')
       setBanner({ type: 'success', message: 'Verification completed successfully.' })
-      const redirectUrl = session?.redirectUrl || resolvedReturnUrl
+      // Use resolvedReturnUrl (callback URL) instead of session?.redirectUrl (verification page URL)
+      const redirectUrl = resolvedReturnUrl
       if (redirectUrl && redirectUrl !== '/dashboard') {
         setShowRedirectModal(true)
         setTimeout(() => {
@@ -627,14 +629,14 @@ export default function VerifyPage() {
               </h3>
               
               {/* Manual redirect button */}
-              {(session?.redirectUrl || resolvedReturnUrl) && (session?.redirectUrl || resolvedReturnUrl) !== '/dashboard' && (
+              {resolvedReturnUrl && resolvedReturnUrl !== '/dashboard' && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-800 mb-2">
                     You should be redirected automatically. If not, click the button below:
                   </p>
                   <button
                     onClick={() => {
-                      const redirectUrl = session?.redirectUrl || resolvedReturnUrl
+                      const redirectUrl = resolvedReturnUrl
                       if (redirectUrl.startsWith('http')) {
                         window.location.href = redirectUrl
                       } else {
