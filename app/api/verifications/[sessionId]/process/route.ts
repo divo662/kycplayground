@@ -190,6 +190,62 @@ export async function POST(
 
     console.log(`✅ Verification session ${sessionId} processed successfully`)
 
+    // Send webhook if verification completed
+    if (status === 'completed' && session.webhookUrl) {
+      try {
+        const webhookPayload = {
+          sessionId,
+          status: 'completed',
+          results,
+          completedAt: new Date().toISOString(),
+          verificationId: session.verificationId
+        }
+        
+        const webhookResponse = await fetch(session.webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookPayload)
+        })
+        
+        console.log('📡 Webhook sent:', {
+          url: session.webhookUrl,
+          status: webhookResponse.status,
+          success: webhookResponse.ok
+        })
+        
+        // Update webhook status in database
+        await databases.updateDocument(
+          config.appwrite.database.id,
+          config.appwrite.database.collections.verificationSessions,
+          sessionId,
+          {
+            webhookSent: true,
+            webhookStatus: webhookResponse.ok ? 'success' : 'failed',
+            webhookResponse: webhookResponse.ok ? 'Webhook sent successfully' : `Webhook failed: ${webhookResponse.status}`,
+            updatedAt: new Date().toISOString()
+          }
+        )
+        
+      } catch (webhookError) {
+        console.error('❌ Webhook error:', webhookError)
+        
+        // Update webhook status in database
+        await databases.updateDocument(
+          config.appwrite.database.id,
+          config.appwrite.database.collections.verificationSessions,
+          sessionId,
+          {
+            webhookSent: true,
+            webhookStatus: 'failed',
+            webhookResponse: `Webhook error: ${webhookError}`,
+            updatedAt: new Date().toISOString()
+          }
+        )
+      }
+    }
+
     return NextResponse.json({
       success: true,
       status,

@@ -140,6 +140,18 @@ export default function VerifyPage() {
         }
         if (data.data.status === 'completed') {
           setBanner({ type: 'success', message: 'Verification completed successfully.' })
+          // Trigger redirect for already completed verifications
+          const redirectUrl = data.data.redirectUrl || resolvedReturnUrl
+          if (redirectUrl && redirectUrl !== '/dashboard') {
+            setShowRedirectModal(true)
+            setTimeout(() => {
+              if (redirectUrl.startsWith('http')) {
+                window.location.href = redirectUrl
+              } else {
+                router.push(redirectUrl)
+              }
+            }, 1800)
+          }
         }
       } else {
         setError('Session not found')
@@ -367,9 +379,16 @@ export default function VerifyPage() {
 
       console.log('✅ Verification completed and saved to database')
       setBanner({ type: 'success', message: 'Verification completed successfully.' })
-      if (resolvedReturnUrl && resolvedReturnUrl !== '/dashboard') {
+      const redirectUrl = session?.redirectUrl || resolvedReturnUrl
+      if (redirectUrl && redirectUrl !== '/dashboard') {
         setShowRedirectModal(true)
-        setTimeout(() => router.push(resolvedReturnUrl), 1800)
+        setTimeout(() => {
+          if (redirectUrl.startsWith('http')) {
+            window.location.href = redirectUrl
+          } else {
+            router.push(redirectUrl)
+          }
+        }, 1800)
       }
 
     } catch (error) {
@@ -596,6 +615,28 @@ export default function VerifyPage() {
                 <CheckCircle className="h-5 w-5 mr-2" />
                 Verification Results
               </h3>
+              
+              {/* Manual redirect button */}
+              {(session?.redirectUrl || resolvedReturnUrl) && (session?.redirectUrl || resolvedReturnUrl) !== '/dashboard' && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800 mb-2">
+                    You should be redirected automatically. If not, click the button below:
+                  </p>
+                  <button
+                    onClick={() => {
+                      const redirectUrl = session?.redirectUrl || resolvedReturnUrl
+                      if (redirectUrl.startsWith('http')) {
+                        window.location.href = redirectUrl
+                      } else {
+                        router.push(redirectUrl)
+                      }
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    Continue to App
+                  </button>
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {verificationResult.name && (
                 <div className="flex items-center space-x-3">
