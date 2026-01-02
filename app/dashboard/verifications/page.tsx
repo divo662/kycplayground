@@ -64,19 +64,51 @@ export default function VerificationsPage() {
     try {
       setLoading(true)
       
-      // Fetch verification sessions from Appwrite - filter by current user's ID
+      // First, get the user's API keys
+      let userApiKeys: string[] = []
+      try {
+        const apiKeysResponse = await fetch('/api/api-keys')
+        if (apiKeysResponse.ok) {
+          const apiKeysData = await apiKeysResponse.json()
+          if (apiKeysData.success && apiKeysData.apiKeys) {
+            userApiKeys = apiKeysData.apiKeys.map((key: any) => key.key).filter(Boolean)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching API keys:', error)
+      }
+      
+      // Fetch all verification sessions from Appwrite
       const result = await databases.listDocuments(
         config.appwrite.database.id,
         config.appwrite.database.collections.verificationSessions,
         [
-          Query.equal('userId', user.$id), // Only show sessions for the logged-in user
           Query.orderDesc('createdAt'),
-          Query.limit(100)
+          Query.limit(500) // Increase limit to get more sessions
         ]
       )
       
-      console.log('📊 Loaded verification sessions for user:', user.$id, result.documents)
-      setVerifications(result.documents as unknown as VerificationSession[])
+      // Filter sessions to show only user's own sessions
+      // Show sessions where:
+      // 1. userId matches the logged-in user's ID, OR
+      // 2. apiKeyId contains one of the user's API keys
+      const userVerifications = result.documents.filter((doc: any) => {
+        // Check if userId matches
+        if (doc.userId === user.$id) {
+          return true
+        }
+        
+        // Check if apiKeyId matches any of the user's API keys
+        if (doc.apiKeyId && userApiKeys.length > 0) {
+          const apiKeyIdStr = String(doc.apiKeyId)
+          return userApiKeys.some((key: string) => apiKeyIdStr.includes(key))
+        }
+        
+        return false
+      })
+      
+      console.log('📊 Loaded verification sessions for user:', user.$id, userVerifications.length, 'out of', result.documents.length)
+      setVerifications(userVerifications as unknown as VerificationSession[])
       
     } catch (error) {
       console.error('Error loading verifications:', error)

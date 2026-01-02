@@ -18,41 +18,82 @@ export interface VerificationStats {
 }
 
 export class AnalyticsService {
+  // Helper to get user's API keys
+  private static async getUserApiKeys(userId: string): Promise<string[]> {
+    try {
+      const apiKeysResult = await databases.listDocuments(
+        config.appwrite.database.id,
+        config.appwrite.database.collections.apiKeys,
+        [Query.equal('userId', userId)]
+      )
+      return apiKeysResult.documents.map((doc: any) => doc.key).filter(Boolean)
+    } catch (error) {
+      console.error('Error fetching user API keys:', error)
+      return []
+    }
+  }
+
+  // Helper to filter verification sessions for a user
+  private static filterUserVerifications(docs: any[], userId: string, userApiKeys: string[]): any[] {
+    return docs.filter((doc: any) => {
+      // Check if userId matches
+      if (doc.userId === userId) {
+        return true
+      }
+      
+      // Check if apiKeyId matches any of the user's API keys
+      if (doc.apiKeyId && userApiKeys.length > 0) {
+        const apiKeyIdStr = String(doc.apiKeyId)
+        return userApiKeys.some((key: string) => apiKeyIdStr.includes(key))
+      }
+      
+      return false
+    })
+  }
+
   // Get real dashboard statistics
   static async getDashboardStats(userId: string): Promise<DashboardStats> {
     try {
-      // Get total verifications - filter by user ID
+      // Get user's API keys first
+      const userApiKeys = await this.getUserApiKeys(userId)
+      
+      // Get all verifications (we'll filter client-side)
       const verificationsResult = await databases.listDocuments(
         config.appwrite.database.id,
         config.appwrite.database.collections.verificationSessions,
-        [
-          Query.equal('userId', userId) // Only count sessions for this user
-        ]
+        []
+      )
+
+      // Filter to only user's verifications
+      const userVerifications = this.filterUserVerifications(
+        verificationsResult.documents,
+        userId,
+        userApiKeys
       )
 
       // Get documents count
       // Documents are not tied yet; skip for now or integrate later
 
-      // Calculate stats
-      const totalVerifications = verificationsResult.total
+      // Calculate stats from filtered user verifications
+      const totalVerifications = userVerifications.length
       
       // Calculate monthly verifications (last 30 days)
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
       
-      const monthlyVerifications = verificationsResult.documents.filter(
+      const monthlyVerifications = userVerifications.filter(
         (doc: any) => new Date(doc.createdAt) > thirtyDaysAgo
       )
       const monthlyVerificationsCount = monthlyVerifications.length
 
       // Calculate success rate
-      const successfulVerifications = verificationsResult.documents.filter(
+      const successfulVerifications = userVerifications.filter(
         (doc: any) => doc.status === 'completed'
       ).length
       const successRate = totalVerifications > 0 ? (successfulVerifications / totalVerifications) * 100 : 0
 
       // Calculate average response time
-      const responseTimes = verificationsResult.documents
+      const responseTimes = userVerifications
         .map((doc: any) => {
           if (doc.createdAt && doc.completedAt) {
             const start = new Date(doc.createdAt).getTime()
@@ -95,33 +136,41 @@ export class AnalyticsService {
   // Get verification usage statistics
   static async getVerificationUsageStats(userId: string): Promise<VerificationStats> {
     try {
+      // Get user's API keys first
+      const userApiKeys = await this.getUserApiKeys(userId)
+      
       const verificationsResult = await databases.listDocuments(
         config.appwrite.database.id,
         config.appwrite.database.collections.verificationSessions,
-        [
-          Query.equal('userId', userId) // Only count sessions for this user
-        ]
+        []
       )
 
-      const totalVerifications = verificationsResult.total
+      // Filter to only user's verifications
+      const userVerifications = this.filterUserVerifications(
+        verificationsResult.documents,
+        userId,
+        userApiKeys
+      )
+
+      const totalVerifications = userVerifications.length
       
       // Calculate monthly verifications
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
       
-      const monthlyVerifications = verificationsResult.documents.filter(
+      const monthlyVerifications = userVerifications.filter(
         (doc: any) => new Date(doc.createdAt) > thirtyDaysAgo
       )
       const monthlyVerificationsCount = monthlyVerifications.length
 
       // Calculate success rate
-      const successfulVerifications = verificationsResult.documents.filter(
+      const successfulVerifications = userVerifications.filter(
         (doc: any) => doc.status === 'completed'
       ).length
       const successRate = totalVerifications > 0 ? (successfulVerifications / totalVerifications) * 100 : 0
 
       // Calculate average response time
-      const responseTimes = verificationsResult.documents
+      const responseTimes = userVerifications
         .map((doc: any) => {
           if (doc.createdAt && doc.completedAt) {
             const start = new Date(doc.createdAt).getTime()
@@ -157,18 +206,26 @@ export class AnalyticsService {
   // Get verification analytics
   static async getVerificationAnalytics(userId: string) {
     try {
+      // Get user's API keys first
+      const userApiKeys = await this.getUserApiKeys(userId)
+      
       const verificationsResult = await databases.listDocuments(
         config.appwrite.database.id,
         config.appwrite.database.collections.verificationSessions,
-        [
-          Query.equal('userId', userId) // Only count sessions for this user
-        ]
+        []
       )
 
-      const total = verificationsResult.total
-      const verified = verificationsResult.documents.filter((doc: any) => doc.status === 'completed').length
-      const failed = verificationsResult.documents.filter((doc: any) => doc.status === 'failed').length
-      const pending = verificationsResult.documents.filter((doc: any) => doc.status === 'pending').length
+      // Filter to only user's verifications
+      const userVerifications = this.filterUserVerifications(
+        verificationsResult.documents,
+        userId,
+        userApiKeys
+      )
+
+      const total = userVerifications.length
+      const verified = userVerifications.filter((doc: any) => doc.status === 'completed').length
+      const failed = userVerifications.filter((doc: any) => doc.status === 'failed').length
+      const pending = userVerifications.filter((doc: any) => doc.status === 'pending').length
 
       const successRate = total > 0 ? (verified / total) * 100 : 0
 
