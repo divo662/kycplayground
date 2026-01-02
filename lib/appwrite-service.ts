@@ -252,6 +252,9 @@ export class AuthService {
         userId,
         email,
         name,
+        role: 'user', // Required: default role for new users
+        status: 'active', // Required: default status for new users
+        plan: 'free', // Required: default plan for new users
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }

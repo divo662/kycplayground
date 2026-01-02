@@ -21,11 +21,13 @@ export class AnalyticsService {
   // Get real dashboard statistics
   static async getDashboardStats(userId: string): Promise<DashboardStats> {
     try {
-      // Get total verifications
+      // Get total verifications - filter by user ID
       const verificationsResult = await databases.listDocuments(
         config.appwrite.database.id,
         config.appwrite.database.collections.verificationSessions,
-        []
+        [
+          Query.equal('userId', userId) // Only count sessions for this user
+        ]
       )
 
       // Get documents count
@@ -96,7 +98,9 @@ export class AnalyticsService {
       const verificationsResult = await databases.listDocuments(
         config.appwrite.database.id,
         config.appwrite.database.collections.verificationSessions,
-        []
+        [
+          Query.equal('userId', userId) // Only count sessions for this user
+        ]
       )
 
       const totalVerifications = verificationsResult.total
@@ -156,7 +160,9 @@ export class AnalyticsService {
       const verificationsResult = await databases.listDocuments(
         config.appwrite.database.id,
         config.appwrite.database.collections.verificationSessions,
-        []
+        [
+          Query.equal('userId', userId) // Only count sessions for this user
+        ]
       )
 
       const total = verificationsResult.total

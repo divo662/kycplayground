@@ -315,28 +315,6 @@ function LoginContent() {
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Social Login Buttons */}
-          <div className="mt-6 space-y-3">
-            <button className="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-              Continue with Google
-            </button>
-            <button className="w-full bg-gray-900 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-              Continue with GitHub
-            </button>
-          </div>
         </div>
 
         {/* Sign Up Link */}

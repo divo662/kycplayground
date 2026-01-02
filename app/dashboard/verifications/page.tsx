@@ -50,24 +50,32 @@ export default function VerificationsPage() {
   const [selected, setSelected] = useState<VerificationSession | null>(null)
 
   useEffect(() => {
-    loadVerifications()
-  }, [])
+    if (user) {
+      loadVerifications()
+    }
+  }, [user])
 
   const loadVerifications = async () => {
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       
-      // Fetch verification sessions from Appwrite
+      // Fetch verification sessions from Appwrite - filter by current user's ID
       const result = await databases.listDocuments(
         config.appwrite.database.id,
         config.appwrite.database.collections.verificationSessions,
         [
+          Query.equal('userId', user.$id), // Only show sessions for the logged-in user
           Query.orderDesc('createdAt'),
           Query.limit(100)
         ]
       )
       
-      console.log('📊 Loaded verification sessions:', result.documents)
+      console.log('📊 Loaded verification sessions for user:', user.$id, result.documents)
       setVerifications(result.documents as unknown as VerificationSession[])
       
     } catch (error) {
